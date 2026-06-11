@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*secret*
+*credential*
+
+# Training outputs and caches
+checkpoints/
+wandb/
+runs/
+outputs/
+cache/
+logs/
+*.log
+
+# Model and dataset artifacts
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.ckpt
+*.onnx
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
