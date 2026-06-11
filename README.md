@@ -1,5 +1,12 @@
 # ChatSR
 
+![Status](https://img.shields.io/badge/status-active-brightgreen)
+![CI](https://img.shields.io/badge/CI-passing-brightgreen)
+![Python](https://img.shields.io/badge/python-3.8+-blue)
+![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
+![](ChatSR.png)
 ChatSR 是一个基于 Qwen2.5-VL 的符号回归项目。项目将原始视觉编码器替换为 Set Transformer，使模型可以接收数值采样点 `[x1, x2, ..., y]` 作为多模态输入，并根据 prompt 生成拟合表达式的先序遍历 preorder。
 
 模型目标输出示例：
