@@ -1,4 +1,4 @@
-# ChatSR
+# ChatSR: A Scientific Multimodal Large Language Model for Discovering Formulas from Scientific Data
 
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![CI](https://img.shields.io/badge/CI-passing-brightgreen)
