@@ -66,7 +66,7 @@ conda activate chatsr
 进入项目目录：
 
 ```bash
-cd /home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05
+cd /home/.../ChatSR
 ```
 
 安装依赖：
@@ -180,7 +180,7 @@ qwen-vl-finetune/qwenvl/data/__init__.py
 
 ```python
 SYMBOLIC_REGRESSION_VARY_1000 = {
-    "annotation_path": "/home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05/symbolic_regression_data_vary_1000/train.json",
+    "annotation_path": "/home/.../ChatSR/symbolic_regression_data_vary_1000/train.json",
     "data_path": "",
 }
 ```
@@ -206,7 +206,7 @@ SYMBOLIC_REGRESSION_VARY_1000 = {
 ```bash
 python expend_tokens.py \
   --model_path /path/to/Qwen2.5-VL-3B-Instruct \
-  --output_path /home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05/Qwen/Qwen2.5-VL-3B-Instruct-expend-token
+  --output_path /home/.../ChatSR/Qwen/Qwen2.5-VL-3B-Instruct-expend-token
 ```
 
 训练时 `--model_name_or_path` 应指向扩展后的模型目录。
