@@ -241,8 +241,8 @@ scripts/train_symbolic_regression_multi_gpu.sh
 编辑 `interactive_inference_json_bfgs.py` 顶部路径：
 
 ```python
-MODEL_PATH = "/home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05/checkpoints/symbolic-regression-vary-1000/final_model"
-JSON_PATH = "/home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05/symbolic_regression_data_vary_1000/test.json"
+MODEL_PATH = "/home/.../ChatSR/checkpoints/symbolic-regression-vary-1000/final_model"
+JSON_PATH = "/home/.../ChatSR/symbolic_regression_data_vary_1000/test.json"
 ```
 
 运行：
@@ -291,7 +291,7 @@ Collator 中也应确保：
 position_ids = [ids.squeeze(0) if ids.dim() > 1 else ids for ids in position_ids]
 ```
 
-训练后可用 `interactive_inference_json_AAAA.py` 检查：
+训练后可用 `interactive_inference_json.py` 检查：
 
 ```text
 sr-json> loss <sample_id>
@@ -320,7 +320,7 @@ config.tie_word_embeddings = False
 ### 调试推理
 
 ```bash
-python interactive_inference_json_AAAA.py
+python interactive_inference_json.py
 ```
 
 常用命令：
@@ -375,7 +375,7 @@ python data_gen_vary.py \
 
 ```python
 SYMBOLIC_REGRESSION_LEXICAL_POINT_20 = {
-    "annotation_path": "/home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05/symbolic_regression_data_20/train.json",
+    "annotation_path": "/home/.../ChatSR/symbolic_regression_data_20/train.json",
     "data_path": "",
 }
 ```
