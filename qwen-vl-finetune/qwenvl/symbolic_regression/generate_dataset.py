@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-生成符号回归数据集
-基于Qwen2.5-VL官方数据格式
+Generate symbolic regression dataset
+Based on official Qwen2.5-VL data format
 """
 
 import os
@@ -9,7 +9,7 @@ import sys
 import argparse
 from pathlib import Path
 
-# 添加项目路径
+# Add project path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.append(str(project_root))
 
@@ -19,11 +19,11 @@ from qwenvl.symbolic_regression.data_processor import (
 )
 
 def generate_symbolic_regression_data(num_samples, output_file):
-    """生成符号回归数据的便捷函数"""
+    """Convenience function for generating symbolic regression data"""
     config = SymbolicRegressionConfig()
     processor = SymbolicRegressionDataProcessor(config)
     processor.generate_dataset(num_samples, output_file)
-    print(f"✅ 生成了 {num_samples} 个样本，保存到 {output_file}")
+    print(f"✅ Generated {num_samples} samples, saved to {output_file}")
 
 def main():
     parser = argparse.ArgumentParser(description='Generate Symbolic Regression Dataset')
@@ -35,49 +35,49 @@ def main():
     
     args = parser.parse_args()
     
-    # 创建输出目录
+    # Create output directory
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    # 创建配置
+    # Create configuration
     config = SymbolicRegressionConfig()
     processor = SymbolicRegressionDataProcessor(config)
     
-    print(f"🚀 开始生成符号回归数据集...")
-    print(f"总样本数: {args.num_samples}")
-    print(f"输出目录: {output_dir}")
+    print(f"🚀 Starting symbolic regression dataset generation...")
+    print(f"Total samples: {args.num_samples}")
+    print(f"Output directory: {output_dir}")
     
-    # 计算各个数据集的大小
+    # Calculate the size of each dataset
     train_size = int(args.num_samples * args.train_ratio)
     val_size = int(args.num_samples * args.val_ratio)
     test_size = args.num_samples - train_size - val_size
     
-    print(f"训练集: {train_size} 样本")
-    print(f"验证集: {val_size} 样本")
-    print(f"测试集: {test_size} 样本")
+    print(f"Training set: {train_size} Sample")
+    print(f"Validation set: {val_size} Sample")
+    print(f"Test set: {test_size} Sample")
     
-    # 生成训练集
+    # Generating training set
     if train_size > 0:
-        print("\n📊 生成训练集...")
+        print("\n📊 Generating training set...")
         train_path = output_dir / "train.json"
         processor.generate_dataset(train_size, str(train_path))
     
-    # 生成验证集
+    # Generating validation set
     if val_size > 0:
-        print("\n📊 生成验证集...")
+        print("\n📊 Generating validation set...")
         val_path = output_dir / "val.json"
         processor.generate_dataset(val_size, str(val_path))
     
-    # 生成测试集
+    # Generating test set
     if test_size > 0:
-        print("\n📊 生成测试集...")
+        print("\n📊 Generating test set...")
         test_path = output_dir / "test.json"
         processor.generate_dataset(test_size, str(test_path))
     
-    # 创建数据集配置文件
+    # Create dataset config file
     dataset_config = {
         "name": "symbolic_regression",
-        "description": "符号回归数据集，用于训练数学表达式生成模型",
+        "description": "Symbolic regression dataset for training mathematical expression generation models",
         "total_samples": args.num_samples,
         "train_samples": train_size,
         "val_samples": val_size,
@@ -94,9 +94,9 @@ def main():
     with open(config_path, 'w', encoding='utf-8') as f:
         json.dump(dataset_config, f, ensure_ascii=False, indent=2)
     
-    print(f"\n✅ 数据集生成完成!")
-    print(f"配置文件: {config_path}")
-    print(f"\n📁 生成的文件:")
+    print(f"\n✅ Dataset generation completed!")
+    print(f"Config file: {config_path}")
+    print(f"\n📁 Generated files:")
     for file_path in output_dir.glob("*.json"):
         file_size = file_path.stat().st_size / (1024 * 1024)  # MB
         print(f"  {file_path.name}: {file_size:.1f} MB")

@@ -48,7 +48,7 @@ from typing import Optional
 @dataclass
 class ModelArguments:
     model_name_or_path: Optional[str] = field(default="Qwen/Qwen2.5-VL-3B-Instruct")
-    # --- 修复：添加 LoRA 相关参数 ---
+    # --- Fix: add LoRA-related parameters ---
     lora_enable: bool = field(default=False, metadata={"help": "Enable LoRA fine-tuning."})
     lora_r: int = field(default=64, metadata={"help": "LoRA rank."})
     lora_alpha: int = field(default=128, metadata={"help": "LoRA alpha."})
@@ -57,7 +57,7 @@ class ModelArguments:
         default="q_proj,v_proj,k_proj,o_proj,gate_proj,up_proj,down_proj",
         metadata={"help": "Comma separated list of modules to target for LoRA."}
     )
-    # --- 现有参数 ---
+    # --- Existing parameters ---
     tune_mm_mlp: bool = field(default=False, metadata={"help": "Tune the multi-modal projector."})
     tune_mm_vision: bool = field(default=False, metadata={"help": "Tune the vision tower."})
     tune_mm_llm: bool = field(default=False, metadata={"help": "Tune the LLM."})

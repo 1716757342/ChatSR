@@ -11,10 +11,10 @@ import transformers
 from transformers import AutoTokenizer
 
 # =====================
-# 直接在这里改路径
+# Change paths directly here
 # =====================
-MODEL_PATH = "/home/dataset-local/liyanjie/Qwen-SR-V2/checkpoints/symbolic-regression-qwen-positionids-fix/final_model/final_model"
-JSON_PATH = "/home/dataset-local/liyanjie/Qwen-SR-V2/symbolic_regression_data_20/test.json"
+MODEL_PATH = "/path/to/ChatSR/checkpoints/symbolic-regression-qwen-positionids-fix/final_model/final_model"
+JSON_PATH = "/path/to/ChatSR/symbolic_regression_data_20/test.json"
 DEVICE = "cuda"
 TORCH_DTYPE = "float32"  # float32 / float16 / bfloat16
 MAX_NEW_TOKENS = 100
@@ -27,7 +27,7 @@ project_root = Path(__file__).parent
 qwen_finetune_path = project_root / "qwen-vl-finetune"
 if str(qwen_finetune_path) not in sys.path:
     sys.path.append(str(qwen_finetune_path))
-    print(f"已将 '{qwen_finetune_path}' 添加到 sys.path")
+    print(f"Added '{qwen_finetune_path}' to sys.path")
 
 try:
     from qwenvl.symbolic_regression.model import SymbolicRegressionQwenModel
@@ -39,15 +39,15 @@ try:
         make_symbolic_regression_data_module,
     )
 except ImportError as e:
-    print("❌ 无法导入符号回归模块。")
-    print(f"   请确认路径存在: {qwen_finetune_path}")
-    print(f"   原始错误: {e}")
+    print("❌ Unable to import symbolic regression module.")
+    print(f"   Please confirm the path exists: {qwen_finetune_path}")
+    print(f"   Original error: {e}")
     sys.exit(1)
 
 
 def select_device():
     if DEVICE == "cuda" and not torch.cuda.is_available():
-        print("⚠️ CUDA 不可用，切换到 CPU。")
+        print("⚠️ CUDA is unavailable; switching to CPU.")
         return torch.device("cpu")
     return torch.device(DEVICE)
 
@@ -56,7 +56,7 @@ def load_json_samples(path):
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, list):
-        raise ValueError("JSON 顶层必须是 list。")
+        raise ValueError("The JSON top level must be a list.")
     return data
 
 
@@ -95,7 +95,7 @@ def build_instance_from_json_sample(sample, tokenizer, sr_config, sr_processor):
     conversations = sample.get("conversations", [])
     data_points = sample.get("data_points")
     if data_points is None:
-        raise ValueError(f"样本 {sample.get('id', 'unknown')} 缺少 data_points。")
+        raise ValueError(f"Sample {sample.get('id', 'unknown')} is missing data_points。")
     if not conversations:
         conversations = [
             {"from": "human", "value": DEFAULT_PROMPT},
@@ -125,7 +125,7 @@ def build_samples(raw_samples, tokenizer, sr_config, sr_processor):
         try:
             instance = build_instance_from_json_sample(raw, tokenizer, sr_config, sr_processor)
         except Exception as e:
-            print(f"⚠️ 跳过样本 {sample_id}: {e}")
+            print(f"⚠️ Skipping sample {sample_id}: {e}")
             continue
         samples.append(
             {
@@ -142,9 +142,9 @@ def build_samples(raw_samples, tokenizer, sr_config, sr_processor):
 def print_model_diagnostics(model, tokenizer):
     input_embeddings = model.get_input_embeddings().weight
     lm_head = model.lm_head.weight
-    print("\n🔎 模型诊断")
+    print("\n🔎 Model diagnostics")
     print(f"   tie_word_embeddings: {model.config.tie_word_embeddings}")
-    print(f"   lm_head/input_embeddings 共享 storage: {lm_head.data_ptr() == input_embeddings.data_ptr()}")
+    print(f"   lm_head/input_embeddings shared storage: {lm_head.data_ptr() == input_embeddings.data_ptr()}")
     math_ids = [tokenizer.convert_tokens_to_ids(token) for token in ["<|math_add|>", "<|math_x1|>", "<|math_C|>"]]
     math_ids = [token_id for token_id in math_ids if token_id is not None and token_id >= 0]
     if math_ids:
@@ -204,14 +204,14 @@ def evaluate_all(model, data_collator, samples, device, bf16=False):
         print(f"   {sample['id']}: {loss:.6f}{suffix} | {sample['expected_response'][:100]}")
 
     if not rows:
-        print("❌ 没有可评估的样本。")
+        print("❌ No evaluable samples.")
         return
 
     avg = sum(loss for _, loss, _ in rows) / len(rows)
     print("\n" + "=" * 60)
-    print(f"📊 样本数: {len(rows)}")
-    print(f"📊 平均 teacher-forcing loss: {avg:.6f}")
-    print("📊 loss 从高到低:")
+    print(f"📊 Number of samples: {len(rows)}")
+    print(f"📊 Average teacher-forcing loss: {avg:.6f}")
+    print("📊 Loss from high to low:")
     for sample_id, loss, expected in sorted(rows, key=lambda item: item[1], reverse=True):
         print(f"  {sample_id}: {loss:.6f} | {expected[:100]}")
     print("=" * 60 + "\n")
@@ -221,7 +221,7 @@ def prepare_generation_inputs(sample, tokenizer, sr_config, sr_processor, device
     raw = sample["raw"]
     data_points = raw.get("data_points")
     if data_points is None:
-        raise ValueError(f"样本 {sample['id']} 缺少 data_points。")
+        raise ValueError(f"Sample {sample['id']} is missing data_points。")
 
     if "<data>" not in prompt:
         prompt = "<data>\n" + prompt
@@ -283,14 +283,14 @@ def generate_with_inputs(model, tokenizer, sample, input_ids, attention_mask, da
     tokens = tokenizer.convert_ids_to_tokens(generated_ids[:120].tolist())
 
     print("\n" + "=" * 60)
-    print(f"样本: {sample['id']}")
+    print(f"Sample: {sample['id']}")
     if sample["expected_response"]:
-        print(f"训练/测试目标: {sample['expected_response']}")
-    print("\n预测结果 skip_special_tokens=True:")
+        print(f"Training/test target: {sample['expected_response']}")
+    print("\nPrediction result skip_special_tokens=True:")
     print(response)
-    print("\n原始解码 skip_special_tokens=False:")
+    print("\nRaw decoding skip_special_tokens=False:")
     print(response_raw)
-    print("\n生成 token 前120个:")
+    print("\nFirst 120 generated tokens:")
     print(tokens)
     print("=" * 60 + "\n")
 
@@ -314,7 +314,7 @@ def generate_from_training_prefix(model, tokenizer, sample, device):
 
     label_positions = (labels != -100).nonzero(as_tuple=True)[0]
     if label_positions.numel() == 0:
-        raise ValueError(f"样本 {sample['id']} 没有可生成的 assistant 标签。")
+        raise ValueError(f"Sample {sample['id']} has no assistant labels available for generation.")
 
     prefix_len = int(label_positions[0].item())
     prefix_ids = input_ids[:prefix_len].unsqueeze(0).to(device)
@@ -322,7 +322,7 @@ def generate_from_training_prefix(model, tokenizer, sample, device):
     data_points_tensor = instance["data_points"].unsqueeze(0).to(device)
     data_grid_thw = instance["data_grid_thw"].to(device)
 
-    print("✅ 使用 teacher-forcing 样本中的真实 prefix 生成。")
+    print("✅ Generating with the real prefix from the teacher-forcing sample.")
     print(f"prefix_len={prefix_len}, target_first_token={tokenizer.decode(input_ids[prefix_len:prefix_len + 1])!r}")
     generate_with_inputs(model, tokenizer, sample, prefix_ids, attention_mask, data_points_tensor, data_grid_thw)
 
@@ -338,7 +338,7 @@ def debug_next_token_logits(model, tokenizer, sample, device):
 
     label_positions = (labels != -100).nonzero(as_tuple=True)[0]
     if label_positions.numel() == 0:
-        print(f"❌ 样本 {sample['id']} 没有 assistant 标签。")
+        print(f"❌ Sample {sample['id']} has no assistant labels.")
         return
 
     first_label_pos = int(label_positions[0].item())
@@ -375,12 +375,12 @@ def debug_next_token_logits(model, tokenizer, sample, device):
     full_top = torch.topk(full_probs, k=10)
 
     print("\n" + "=" * 60)
-    print(f"样本: {sample['id']}")
+    print(f"Sample: {sample['id']}")
     print(f"first_label_pos={first_label_pos}")
-    print(f"目标首 token id={target_id}, token={tokenizer.convert_ids_to_tokens([target_id])}, text={tokenizer.decode([target_id])!r}")
+    print(f"Target first token id={target_id}, token={tokenizer.convert_ids_to_tokens([target_id])}, text={tokenizer.decode([target_id])!r}")
     print(f"teacher-forcing loss={float(full_outputs.loss.detach().cpu()):.6f}")
-    print(f"prefix-only 目标 token 概率={float(prefix_probs[target_id].detach().cpu()):.8f}")
-    print(f"full-input  目标 token 概率={float(full_probs[target_id].detach().cpu()):.8f}")
+    print(f"prefix-only target token probability={float(prefix_probs[target_id].detach().cpu()):.8f}")
+    print(f"full-input  target token probability={float(full_probs[target_id].detach().cpu()):.8f}")
     print("prefix-only top10:")
     for prob, token_id in zip(prefix_top.values.tolist(), prefix_top.indices.tolist()):
         print(f"  {prob:.8f} | {token_id} | {tokenizer.convert_ids_to_tokens([token_id])} | {tokenizer.decode([token_id])!r}")
@@ -400,26 +400,26 @@ def find_sample(samples, sample_id):
 def print_help():
     print(
         """
-可用命令:
-  help                         显示帮助
-  list [n]                     列出前 n 个样本，默认 20
-  use <sample_id>              选择当前样本
-  show                         显示当前样本信息
-  prompt                       手动输入/修改当前 prompt
-  gen                          使用 teacher-forcing 样本真实 prefix 生成
-  gen <sample_id>              选择样本并使用 teacher-forcing 真实 prefix 生成
-  gen_prompt                   使用当前样本 JSON 原始 prompt 重新拼输入生成
-  gen_prompt <sample_id>       选择样本并使用 JSON 原始 prompt 重新拼输入生成
-  gen_manual                   对当前样本手动输入 prompt 后生成
-  gen_manual <sample_id>       选择样本并手动输入 prompt 后生成
-  gen_default                  使用 DEFAULT_PROMPT 对当前样本生成
-  debug <sample_id>            对比首 token logits 和 teacher-forcing loss
-  loss                         计算当前样本 teacher-forcing loss
-  loss <sample_id>             计算指定样本 teacher-forcing loss
-  all                          计算全部样本 teacher-forcing loss
-  target                       显示当前样本目标答案
-  target <sample_id>           显示指定样本目标答案
-  quit / exit                  退出
+Available commands:
+  help                         Show help
+  list [n]                     List the first n samples; default 20
+  use <sample_id>              Select current sample
+  show                         Show current sample information
+  prompt                       Manually enter/modify the current prompt
+  gen                          Generate with the real prefix from the teacher-forcing sample
+  gen <sample_id>              Select a sample and generate with the real teacher-forcing prefix
+  gen_prompt                   Rebuild input using the current sample JSON raw prompt and generate
+  gen_prompt <sample_id>       Select a sample, rebuild input with the JSON raw prompt, and generate
+  gen_manual                   Manually enter a prompt for the current sample and generate
+  gen_manual <sample_id>       Select a sample, manually enter a prompt, and generate
+  gen_default                  Generate for the current sample using DEFAULT_PROMPT
+  debug <sample_id>            Compare first-token logits and teacher-forcing loss
+  loss                         Compute teacher-forcing loss for the current sample
+  loss <sample_id>             Compute teacher-forcing loss for the specified sample
+  all                          Compute teacher-forcing loss for all samples
+  target                       Show target answer for current sample
+  target <sample_id>           Show target answer for specified sample
+  quit / exit                  Exit
 """.strip()
     )
 
@@ -430,10 +430,10 @@ def main():
     dtype_map = {"float32": torch.float32, "float16": torch.float16, "bfloat16": torch.bfloat16}
     model_dtype = dtype_map[TORCH_DTYPE]
 
-    print(f"🤖 使用设备: {device}")
-    print(f"🔢 模型加载 dtype: {model_dtype}")
-    print(f"📦 模型路径: {MODEL_PATH}")
-    print(f"📖 JSON路径: {JSON_PATH}")
+    print(f"🤖 Using device: {device}")
+    print(f"🔢 Model loading dtype: {model_dtype}")
+    print(f"📦 Model path: {MODEL_PATH}")
+    print(f"📖 JSON path: {JSON_PATH}")
 
     tokenizer = AutoTokenizer.from_pretrained(
         MODEL_PATH,
@@ -451,24 +451,24 @@ def main():
 
     sr_config = SymbolicRegressionConfig()
     sr_processor = SymbolicRegressionDataProcessor(sr_config)
-    print(f"📊 内部临时 dataset_use: {AUTO_DATASET_NAME}%100 -> {JSON_PATH}")
+    print(f"📊 Internal temporary dataset_use: {AUTO_DATASET_NAME}%100 -> {JSON_PATH}")
     samples, data_collator = build_samples_from_dataset_module(JSON_PATH, tokenizer)
 
-    print(f"✅ 样本数: {len(samples)}")
+    print(f"✅ Number of samples: {len(samples)}")
     print_model_diagnostics(model, tokenizer)
     print_help()
 
     current_sample = samples[0] if samples else None
     current_prompt = get_human_prompt(current_sample["raw"]) if current_sample else DEFAULT_PROMPT
     if current_sample:
-        print(f"\n当前样本: {current_sample['id']}")
-        print("当前 prompt 已使用该样本 JSON 中的 human prompt。")
+        print(f"\nCurrent sample: {current_sample['id']}")
+        print("The current prompt uses the human prompt from this sample JSON.")
 
     while True:
         try:
             command = input("sr-json> ").strip()
         except (EOFError, KeyboardInterrupt):
-            print("\n退出。")
+            print("\nExit。")
             break
 
         if not command:
@@ -491,48 +491,48 @@ def main():
             continue
         if op == "use":
             if len(parts) < 2:
-                print("❌ 用法: use <sample_id>")
+                print("❌ Usage: use <sample_id>")
                 continue
             sample = find_sample(samples, parts[1])
             if sample is None:
-                print(f"❌ 未找到样本: {parts[1]}")
+                print(f"❌ Sample not found: {parts[1]}")
                 continue
             current_sample = sample
             current_prompt = get_human_prompt(current_sample["raw"]) or DEFAULT_PROMPT
-            print(f"✅ 当前样本: {current_sample['id']}")
-            print(f"✅ 当前 prompt 已切换为该样本 JSON 中的 human prompt。")
+            print(f"✅ Current sample: {current_sample['id']}")
+            print(f"✅ Current prompt switched to the human prompt from this sample JSON.")
             continue
         if op == "show":
             if current_sample is None:
-                print("❌ 当前没有样本。")
+                print("❌ There is no current sample.")
                 continue
             raw = current_sample["raw"]
             points = raw.get("data_points", [])
             print(f"ID: {current_sample['id']}")
-            print(f"数据点数量/维度: {len(points)} x {len(points[0]) if points else 0}")
-            print(f"当前 prompt: {current_prompt}")
+            print(f"Number/dimension of data points: {len(points)} x {len(points[0]) if points else 0}")
+            print(f"Current prompt: {current_prompt}")
             if current_sample["expected_response"]:
-                print(f"目标: {current_sample['expected_response']}")
+                print(f"Target: {current_sample['expected_response']}")
             continue
         if op == "prompt":
-            print("请输入 prompt；直接回车使用 DEFAULT_PROMPT。")
+            print("Enter a prompt; press Enter directly to use DEFAULT_PROMPT.")
             text = input("prompt> ").strip()
             current_prompt = text if text else DEFAULT_PROMPT
-            print(f"✅ 当前 prompt: {current_prompt}")
+            print(f"✅ Current prompt: {current_prompt}")
             continue
 
         target_sample = current_sample
         if len(parts) > 1:
             sample = find_sample(samples, parts[1])
             if sample is None:
-                print(f"❌ 未找到样本: {parts[1]}")
+                print(f"❌ Sample not found: {parts[1]}")
                 continue
             target_sample = sample
             current_sample = sample
             current_prompt = get_human_prompt(current_sample["raw"]) or DEFAULT_PROMPT
 
         if target_sample is None:
-            print("❌ 当前没有样本。")
+            print("❌ There is no current sample.")
             continue
 
         if op == "loss":
@@ -547,10 +547,10 @@ def main():
             generate_from_training_prefix(model, tokenizer, target_sample, device)
         elif op == "gen_prompt":
             current_prompt = get_human_prompt(target_sample["raw"]) or DEFAULT_PROMPT
-            print("✅ 使用该样本 JSON 中的 human prompt 重新拼输入生成。")
+            print("✅ Rebuilding input with the human prompt from this sample JSON and generating.")
             generate_for_sample(model, tokenizer, target_sample, sr_config, sr_processor, device, current_prompt)
         elif op == "gen_manual":
-            print("请输入 prompt；直接回车使用当前 prompt。")
+            print("Enter a prompt; press Enter directly to use the current prompt.")
             text = input("prompt> ").strip()
             if text:
                 current_prompt = text
@@ -559,7 +559,7 @@ def main():
             current_prompt = DEFAULT_PROMPT
             generate_for_sample(model, tokenizer, target_sample, sr_config, sr_processor, device, current_prompt)
         else:
-            print(f"❌ 未知命令: {op}")
+            print(f"❌ Unknown command: {op}")
 
 
 if __name__ == "__main__":

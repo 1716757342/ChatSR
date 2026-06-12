@@ -127,7 +127,7 @@ def run_evaluation(args):
     # Load dataset
     meta = load_dataset(args.dataset)
 
-    # data中data.iloc[i]中的index必须在results中存在，对应results中的results[i]['id']，并且data中data.iloc[i]中的question必须和results中results[i]['annotation']中的question完全一致
+    # The index in data.iloc[i] must exist in results, corresponding to results[i]['id'], and the question in data.iloc[i] must exactly match the question in results[i]['annotation'].
     print(f"len(data): {len(data)}")
     print(f"len(meta): {len(meta)}")
     meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}

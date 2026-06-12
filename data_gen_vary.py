@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 """
-  2. data_gen_vary.py：data_gen.py 的多 prompt 版本
+  2. data_gen_vary.py：multi-prompt version of data_gen.py
   
-  用途：也是生成 special token 公式，但 prompt 和回答模板更多样化。
+  Purpose: also generates formulas with special tokens, but uses more diverse prompts and answer templates.
 
-  输出可能类似：
+  Example output:
 
   Based on the data, the derived formula is: <|math_add|>,<|math_x1|>,<|math_x2|>
 
-  特点：
+  Features:
 
-  - 也会把 +, -, *, sin, x1 转成 <|math_xxx|>
-  - prompt 模板更多样
-  - 适合提升模型对不同问法的泛化
-  - 但格式不一定像 data_gen.py 那样固定带 [...]
+  - Also converts +, -, *, sin, and x1 into <|math_xxx|>
+  - More diverse prompt templates
+  - Helps improve model generalization to different question phrasings
+  - The format is not necessarily fixed with [...] like data_gen.py
 
-  如果你想先稳定训练，建议先用 data_gen.py。
-  如果后面想让模型适应更多 prompt，再用 data_gen_vary.py。
+  If you want stable training first, use data_gen.py.
+  If you later want the model to adapt to more prompts, use data_gen_vary.py.
 
   ---
 """
@@ -30,11 +30,11 @@ import math
 import argparse
 
 # ==============================================================================
-# 1. 表达式树与生成逻辑
+# 1. Expression tree and generation logic
 # ==============================================================================
 
 class ExpressionNode:
-    """表达式节点类"""
+    """Expression node class"""
     def __init__(self, value: str, children: List['ExpressionNode'] = None):
         self.value = value
         self.children = children or []
@@ -89,10 +89,10 @@ class ExpressionNode:
                 arg = abs(arg)
             return math.sqrt(arg)
         else:
-            raise ValueError(f"未知的操作符: {self.value}")
+            raise ValueError(f"Unknown operator: {self.value}")
 
 class AdvancedExpressionGenerator:
-    """高级表达式生成器"""
+    """Advanced expression generator"""
     def __init__(self, max_variables: int = 5):
         self.max_variables = max_variables
         self.binary_ops = ['+', '-', '*', '/', '^']
@@ -165,11 +165,11 @@ class AdvancedExpressionGenerator:
         return sorted(list(variables))
 
 # ==============================================================================
-# 2. 特殊Token映射
+# 2. Special token mapping
 # ==============================================================================
 
 def get_special_token_map() -> Dict[str, str]:
-    """返回从标准符号到特殊Token的映射字典"""
+    """Return a mapping dictionary from standard symbols to special tokens"""
     # This map should align with your `extend_tokenizer_math_tokens.py` script
     math_tokens_def = {
         "<|math_add|>": "+", "<|math_sub|>": "-", "<|math_mul|>": "*",
@@ -186,7 +186,7 @@ def get_special_token_map() -> Dict[str, str]:
     return {v: k for k, v in math_tokens_def.items()}
 
 # ==============================================================================
-# 3. 整合的数据生成函数
+# 3. Integrated data generation function
 # ==============================================================================
 
 def generate_sr_data_with_special_tokens(num_samples: int = 1000,
@@ -202,7 +202,7 @@ def generate_sr_data_with_special_tokens(num_samples: int = 1000,
     symbol_to_token_map = get_special_token_map()
     dataset = []
     
-    # --- 核心修改：定义多样化的对话模板 ---
+    # --- Core change: define diverse conversation templates ---
     human_templates = [
         "<data>\nMy task is to find a fitting formula for this data. Please help me generate the corresponding preorder traversal expression for the formula, using special tokens.",
         "<data>\nBased on the following sampled data, please perform symbolic regression and output the preorder traversal result of the expression binary tree.",
@@ -286,7 +286,7 @@ def generate_sr_data_with_special_tokens(num_samples: int = 1000,
             
             data_points = np.column_stack([X_padded, y_array])
             
-            # --- 核心修改：随机选择并格式化对话 ---
+            # --- Core change: randomly select and format a conversation ---
             human_prompt = random.choice(human_templates)
             gpt_response_template = random.choice(gpt_templates)
             
@@ -346,7 +346,7 @@ def generate_sr_data_with_special_tokens(num_samples: int = 1000,
 
 
 # ==============================================================================
-# 4. 主执行模块
+# 4. Main execution module
 # ==============================================================================
 
 if __name__ == "__main__":

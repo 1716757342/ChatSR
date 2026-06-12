@@ -1,81 +1,81 @@
 # ChatSR
 
-ChatSR 是一个基于 Qwen2.5-VL 的符号回归项目。项目将原始视觉编码器替换为 Set Transformer，使模型可以接收数值采样点 `[x1, x2, ..., y]` 作为多模态输入，并根据 prompt 生成拟合表达式的先序遍历 preorder。
+ChatSR is a symbolic regression project based on Qwen2.5-VL. The project replaces the original vision encoder with a Set Transformer, allowing the model to receive numerical sample points `[x1, x2, ..., y]` as multimodal input and generate the preorder traversal of the fitted expression according to the prompt.
 
-模型目标输出示例：
+Example target model output:
 
 ```text
 Based on the data, the derived formula is: <|math_add|>,<|math_x1|>,<|math_x2|>
 ```
 
-本项目还提供推理脚本，可以将模型输出的 preorder 恢复成表达式，对表达式中的常数项使用 BFGS 进行优化，并输出拟合 `R2`。
+This project also provides inference scripts that can restore model-output preorder into expressions, optimize constants in the expressions with BFGS, and output the fitting `R2`.
 
 ---
 
-## 功能特点
+## Features
 
-- 支持自动合成符号回归数据。
-- 支持数学特殊 token，例如 `<|math_add|>`、`<|math_sin|>`、`<|math_x1|>`、`<|math_C|>`。
-- 基于 Qwen2.5-VL 构建符号回归模型。
-- 使用 Set Transformer 编码数值数据点。
-- 支持 HuggingFace Trainer + FSDP 分布式训练。
-- 提供交互式推理和调试脚本。
-- 支持 preorder 恢复为数学表达式。
-- 支持 BFGS 优化常数项并计算 R²。
+- Supports automatic synthesis of symbolic regression data.
+- Supports special mathematical tokens, such as `<|math_add|>`, `<|math_sin|>`, `<|math_x1|>`, and `<|math_C|>`.
+- Builds a symbolic regression model based on Qwen2.5-VL.
+- Uses Set Transformer to encode numerical data points.
+- Supports HuggingFace Trainer + FSDP distributed training.
+- Provides interactive inference and debugging scripts.
+- Supports restoring preorder to mathematical expressions.
+- Supports optimizing constants with BFGS and computing R².
 
 ---
 
-## 项目结构
+## Project Structure
 
 ```text
 .
-├── data_gen_vary.py                         # 多 prompt 符号回归数据生成脚本
-├── expend_tokens.py                         # 给基础模型添加 <|math_...|> 特殊 token
+├── data_gen_vary.py                         # Multi-prompt symbolic regression data generation script
+├── expend_tokens.py                         # Add <|math_...|> special tokens to the base model
 ├── train_symbolic_regression_distributed_fixed.py
-│                                             # 推荐使用的分布式训练脚本
-├── train_symbolic_regression_fixed.py        # 非分布式训练脚本
-├── interactive_inference_json_AAAA.py        # 交互式推理和调试脚本
-├── interactive_inference_json_bfgs.py        # 推理 + 表达式恢复 + BFGS + R2
+│                                             # Recommended distributed training script
+├── train_symbolic_regression_fixed.py        # Non-distributed training script
+├── interactive_inference_json_AAAA.py        # Interactive inference and debugging script
+├── interactive_inference_json_bfgs.py        # Inference + expression restoration + BFGS + R2
 └── qwen-vl-finetune/
     └── qwenvl/
         ├── data/
-        │   ├── __init__.py                   # 数据集注册入口
-        │   └── data_symbolic_regression.py   # Dataset 和 Collator
+        │   ├── __init__.py                   # Dataset registration entry point
+        │   └── data_symbolic_regression.py   # Dataset and Collator
         └── symbolic_regression/
-            ├── model.py                      # Qwen-SR 模型定义
-            └── data_processor.py             # 数据处理和模型配置
+            ├── model.py                      # Qwen-SR model definition
+            └── data_processor.py             # Data processing and model configuration
 ```
 
 ---
 
-## 环境准备
+## Environment Setup
 
-从新建 conda 环境开始：
+Start from a new conda environment:
 
 ```bash
 conda create -n chatsr python=3.10 -y
 conda activate chatsr
 ```
 
-进入项目目录：
+Enter the project directory:
 
 ```bash
-cd /home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05
+cd /path/to/ChatSR
 ```
 
-安装依赖：
+Install dependencies:
 
 ```bash
 pip install numpy scipy torch transformers accelerate peft safetensors
 ```
 
-其中 `scipy` 用于 BFGS 常数优化。
+Here, `scipy` is used for BFGS constant optimization.
 
 ---
 
-## 数据格式
+## Data Format
 
-每条样本为 JSON 格式，示例：
+Each sample is in JSON format, for example:
 
 ```json
 {
@@ -99,37 +99,37 @@ pip install numpy scipy torch transformers accelerate peft safetensors
 }
 ```
 
-`data_points` 的格式为：
+The format of `data_points` is:
 
 ```text
 [x1, x2, ..., y]
 ```
 
-当前默认配置在：
+The current default configuration is in:
 
 ```text
 qwen-vl-finetune/qwenvl/symbolic_regression/data_processor.py
 ```
 
-关键参数：
+Key parameter:
 
 ```python
 Dim = 4
 ```
 
-这表示每个数据点是：
+This means each data point is:
 
 ```text
 [x1, x2, x3, y]
 ```
 
-生成数据时需要满足：
+Data generation must satisfy:
 
 ```text
 Dim = max_dims + 1
 ```
 
-因此当 `Dim = 4` 时，数据生成应使用：
+Therefore, when `Dim = 4`, data generation should use:
 
 ```bash
 --max_dims 3
@@ -137,11 +137,11 @@ Dim = max_dims + 1
 
 ---
 
-## 快速开始
+## Quick Start
 
-### 1. 合成数据
+### 1. Synthesize Data
 
-使用 `data_gen_vary.py`：
+Use `data_gen_vary.py`:
 
 ```bash
 python data_gen_vary.py \
@@ -153,7 +153,7 @@ python data_gen_vary.py \
   --max_dims 3
 ```
 
-生成结果：
+Generated results:
 
 ```text
 symbolic_regression_data_vary_1000/
@@ -162,58 +162,58 @@ symbolic_regression_data_vary_1000/
 └── test.json
 ```
 
-### 2. 注册数据集
+### 2. Register the Dataset
 
-编辑：
+Edit:
 
 ```text
 qwen-vl-finetune/qwenvl/data/__init__.py
 ```
 
-添加数据集配置：
+Add the dataset configuration:
 
 ```python
 SYMBOLIC_REGRESSION_VARY_1000 = {
-    "annotation_path": "/home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05/symbolic_regression_data_vary_1000/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_vary_1000/train.json",
     "data_path": "",
 }
 ```
 
-并加入 `data_dict`：
+And add it to `data_dict`:
 
 ```python
 "SYMBOLIC_REGRESSION_VARY_1000": SYMBOLIC_REGRESSION_VARY_1000,
 ```
 
-训练时通过以下参数选择该数据集：
+Select this dataset during training with the following parameter:
 
 ```bash
 --dataset_use SYMBOLIC_REGRESSION_VARY_1000%100
 ```
 
-其中 `%100` 表示使用 100% 数据。
+Here `%100` means using 100% of the data.
 
-### 3. 扩展数学特殊 token
+### 3. Extend Special Mathematical Tokens
 
-如果基础模型还没有 `<|math_...|>` token，需要先执行：
+If the base model does not yet have `<|math_...|>` tokens, run this first:
 
 ```bash
 python expend_tokens.py \
   --model_path /path/to/Qwen2.5-VL-3B-Instruct \
-  --output_path /home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05/Qwen/Qwen2.5-VL-3B-Instruct-expend-token
+  --output_path /path/to/ChatSR/Qwen/Qwen2.5-VL-3B-Instruct-expend-token
 ```
 
-训练时 `--model_name_or_path` 应指向扩展后的模型目录。
+During training, `--model_name_or_path` should point to the extended model directory.
 
-### 4. 启动训练
+### 4. Start Training
 
-推荐使用多卡 FSDP，直接运行训练脚本：
+Multi-GPU FSDP is recommended. Run the training script directly:
 
 ```bash
 bash scripts/train_symbolic_regression_multi_gpu.sh
 ```
 
-脚本开头包含训练相关配置，例如：
+The beginning of the script contains training-related configuration, for example:
 
 ```bash
 MODEL_PATH="/path/to/Qwen2.5-VL-3B-Instruct-expend-token"
@@ -222,54 +222,54 @@ DATASETS="SYMBOLIC_REGRESSION_LEXICAL_POINT_20_TEST%100"
 CUDA_VISIBLE_DEVICES="0,1,2,3"
 ```
 
-如需更换模型路径、输出目录、数据集或 GPU，请先修改：
+To change the model path, output directory, dataset, or GPUs, modify this first:
 
 ```text
 scripts/train_symbolic_regression_multi_gpu.sh
 ```
 
-训练结束后，最终模型会保存到脚本中 `OUTPUT_DIR` 指定的目录。
+After training ends, the final model will be saved to the directory specified by `OUTPUT_DIR` in the script.
 
-### 5. 推理并计算 R²
+### 5. Run Inference and Compute R²
 
-编辑 `interactive_inference_json_bfgs.py` 顶部路径：
+Edit the paths at the top of `interactive_inference_json_bfgs.py`:
 
 ```python
-MODEL_PATH = "/home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05/checkpoints/symbolic-regression-vary-1000/final_model"
-JSON_PATH = "/home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05/symbolic_regression_data_vary_1000/test.json"
+MODEL_PATH = "/path/to/ChatSR/checkpoints/symbolic-regression-vary-1000/final_model"
+JSON_PATH = "/path/to/ChatSR/symbolic_regression_data_vary_1000/test.json"
 ```
 
-运行：
+Run:
 
 ```bash
 python interactive_inference_json_bfgs.py
 ```
 
-进入交互界面后：
+After entering the interactive interface:
 
 ```text
 sr-bfgs> list 20
 sr-bfgs> infer advanced_sr_final_18
 ```
 
-脚本会输出：
+The script will output:
 
-- 大模型原始预测；
-- 提取到的 preorder；
-- 恢复后的表达式；
-- BFGS 优化后的常数；
-- MSE；
-- R²。
+- Raw prediction from the large model;
+- Extracted preorder;
+- Restored expression;
+- Constants optimized by BFGS;
+- MSE;
+- R².
 
 ---
 
-## 训练注意事项
+## Training Notes
 
 ### position_ids
 
-Dataset 返回的 `input_ids` 和 `labels` 必须是 `[seq]`，不能是 `[1, seq]`。否则 `position_ids` 可能错误地变成长度 1，导致 teacher-forcing loss 假低。
+The `input_ids` and `labels` returned by the Dataset must be `[seq]`, not `[1, seq]`. Otherwise, `position_ids` may incorrectly become length 1, causing the teacher-forcing loss to be falsely low.
 
-`data_symbolic_regression.py` 中应保留类似逻辑：
+Keep similar logic in `data_symbolic_regression.py`:
 
 ```python
 if isinstance(i, int):
@@ -279,19 +279,19 @@ if isinstance(i, int):
     }
 ```
 
-Collator 中也应确保：
+The Collator should also ensure:
 
 ```python
 position_ids = [ids.squeeze(0) if ids.dim() > 1 else ids for ids in position_ids]
 ```
 
-训练后可用 `interactive_inference_json_AAAA.py` 检查：
+After training, use `interactive_inference_json_AAAA.py` to check:
 
 ```text
 sr-json> loss <sample_id>
 ```
 
-正常情况下应满足：
+Normally, this should satisfy:
 
 ```text
 collator_loss ≈ raw_instance_loss
@@ -299,25 +299,25 @@ collator_loss ≈ raw_instance_loss
 
 ### lm_head
 
-训练脚本中关闭了词嵌入共享：
+The training script disables word embedding sharing:
 
 ```python
 config.tie_word_embeddings = False
 ```
 
-这是为了让 `lm_head` 中数学 token 对应的输出权重可以独立训练。
+This allows the output weights corresponding to mathematical tokens in `lm_head` to be trained independently.
 
 ---
 
-## 推理脚本
+## Inference Scripts
 
-### 调试推理
+### Debug Inference
 
 ```bash
 python interactive_inference_json_AAAA.py
 ```
 
-常用命令：
+Common commands:
 
 ```text
 list 20
@@ -329,15 +329,15 @@ target <sample_id>
 quit
 ```
 
-该脚本适合检查 loss、首 token 概率和生成行为。
+This script is suitable for checking loss, first-token probabilities, and generation behavior.
 
-### 表达式拟合推理
+### Expression-Fitting Inference
 
 ```bash
 python interactive_inference_json_bfgs.py
 ```
 
-常用命令：
+Common commands:
 
 ```text
 list 20
@@ -347,13 +347,13 @@ target <sample_id>
 quit
 ```
 
-其中 `infer` 和 `fit` 等价。
+Here, `infer` and `fit` are equivalent.
 
 ---
 
-## 最小测试示例
+## Minimal Test Example
 
-如果只想快速跑通流程，可以生成 20 条样本：
+If you only want to quickly run through the workflow, generate 20 samples:
 
 ```bash
 python data_gen_vary.py \
@@ -365,16 +365,16 @@ python data_gen_vary.py \
   --max_dims 3
 ```
 
-注册：
+Register:
 
 ```python
 SYMBOLIC_REGRESSION_LEXICAL_POINT_20 = {
-    "annotation_path": "/home/dataset-local/liyanjie/Qwen-SR-V2-copy-06-05/symbolic_regression_data_20/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_20/train.json",
     "data_path": "",
 }
 ```
 
-训练时使用：
+Use during training:
 
 ```bash
 --dataset_use SYMBOLIC_REGRESSION_LEXICAL_POINT_20%100
@@ -382,51 +382,51 @@ SYMBOLIC_REGRESSION_LEXICAL_POINT_20 = {
 
 ---
 
-## 常见问题
+## FAQ
 
-### 1. 模型输出普通英文，而不是 `<|math_...|>` token
+### 1. The model outputs ordinary English instead of `<|math_...|>` tokens
 
-先检查：
+Check first:
 
 ```text
 sr-json> loss <sample_id>
 sr-json> debug <sample_id>
 ```
 
-如果 loss 高，说明模型还没学好。如果 loss 低但生成不稳定，可以尝试：
+If the loss is high, the model has not learned well yet. If the loss is low but generation is unstable, try:
 
-- 增加训练数据；
-- 继续训练；
-- 统一回答模板；
-- 确保 `lm_head` 和 LLM 都参与训练。
+- Increasing the training data;
+- Continuing training;
+- Standardizing the answer template;
+- Ensuring both `lm_head` and the LLM participate in training.
 
-### 2. 训练时报 shape mismatch
+### 2. Shape mismatch occurs during training
 
-检查数据维度：
+Check the data dimensions:
 
 ```text
 Dim = max_dims + 1
 ```
 
-例如：
+For example:
 
 ```text
 Dim = 4
 --max_dims 3
 ```
 
-### 3. BFGS 推理无法恢复表达式
+### 3. BFGS inference cannot restore the expression
 
-检查 `skip_special_tokens=False` 的原始输出中是否包含：
+Check whether the raw output with `skip_special_tokens=False` contains:
 
 ```text
 <|math_add|>,<|math_x1|>,<|math_C|>
 ```
 
-如果没有，说明模型没有生成合法 preorder。
+If not, the model did not generate a valid preorder.
 
 ---
 
 ## License
 
-本项目基于 Qwen2.5-VL 相关组件开发。使用时请遵守原始 Qwen 模型及相关第三方依赖的许可证要求。
+This project is developed based on Qwen2.5-VL related components. Please comply with the license requirements of the original Qwen model and related third-party dependencies when using it.

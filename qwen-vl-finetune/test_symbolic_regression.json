@@ -4,11 +4,11 @@
     "conversations": [
       {
         "from": "human",
-        "value": "<data>\n这是采样的一组科学数据点，请你寻找一个表达式来拟合这组数据，你只需要生成表达式二叉树的先序遍历即可"
+        "value": "<data>\nHere is a sampled set of scientific data points. Please find an expression to fit this data set. You only need to generate the preorder traversal of the expression binary tree."
       },
       {
         "from": "gpt",
-        "value": "好的，我得到的表达式先序遍历是[+,+,x1,x2,x3]"
+        "value": "OK, the preorder traversal of the expression I obtained is[+,+,x1,x2,x3]"
       }
     ],
     "data_points": [
@@ -1100,11 +1100,11 @@
     "conversations": [
       {
         "from": "human",
-        "value": "<data>\n这是采样的一组科学数据点，请你寻找一个表达式来拟合这组数据，你只需要生成表达式二叉树的先序遍历即可"
+        "value": "<data>\nHere is a sampled set of scientific data points. Please find an expression to fit this data set. You only need to generate the preorder traversal of the expression binary tree."
       },
       {
         "from": "gpt",
-        "value": "好的，我得到的表达式先序遍历是[+,+,^,x1,2,x2,x3]"
+        "value": "OK, the preorder traversal of the expression I obtained is[+,+,^,x1,2,x2,x3]"
       }
     ],
     "data_points": [
@@ -2378,11 +2378,11 @@
     "conversations": [
       {
         "from": "human",
-        "value": "<data>\n这是采样的一组科学数据点，请你寻找一个表达式来拟合这组数据，你只需要生成表达式二叉树的先序遍历即可"
+        "value": "<data>\nHere is a sampled set of scientific data points. Please find an expression to fit this data set. You only need to generate the preorder traversal of the expression binary tree."
       },
       {
         "from": "gpt",
-        "value": "好的，我得到的表达式先序遍历是[+,+,x1,x2,x3]"
+        "value": "OK, the preorder traversal of the expression I obtained is[+,+,x1,x2,x3]"
       }
     ],
     "data_points": [
@@ -3227,11 +3227,11 @@
     "conversations": [
       {
         "from": "human",
-        "value": "<data>\n这是采样的一组科学数据点，请你寻找一个表达式来拟合这组数据，你只需要生成表达式二叉树的先序遍历即可"
+        "value": "<data>\nHere is a sampled set of scientific data points. Please find an expression to fit this data set. You only need to generate the preorder traversal of the expression binary tree."
       },
       {
         "from": "gpt",
-        "value": "好的，我得到的表达式先序遍历是[+,*,x1,x2,x3]"
+        "value": "OK, the preorder traversal of the expression I obtained is[+,*,x1,x2,x3]"
       }
     ],
     "data_points": [
@@ -4479,11 +4479,11 @@
     "conversations": [
       {
         "from": "human",
-        "value": "<data>\n这是采样的一组科学数据点，请你寻找一个表达式来拟合这组数据，你只需要生成表达式二叉树的先序遍历即可"
+        "value": "<data>\nHere is a sampled set of scientific data points. Please find an expression to fit this data set. You only need to generate the preorder traversal of the expression binary tree."
       },
       {
         "from": "gpt",
-        "value": "好的，我得到的表达式先序遍历是[+,*,x1,x2,x3]"
+        "value": "OK, the preorder traversal of the expression I obtained is[+,*,x1,x2,x3]"
       }
     ],
     "data_points": [
@@ -5523,11 +5523,11 @@
     "conversations": [
       {
         "from": "human",
-        "value": "<data>\n这是采样的一组科学数据点，请你寻找一个表达式来拟合这组数据，你只需要生成表达式二叉树的先序遍历即可"
+        "value": "<data>\nHere is a sampled set of scientific data points. Please find an expression to fit this data set. You only need to generate the preorder traversal of the expression binary tree."
       },
       {
         "from": "gpt",
-        "value": "好的，我得到的表达式先序遍历是[+,x1,*,x2,x3]"
+        "value": "OK, the preorder traversal of the expression I obtained is[+,x1,*,x2,x3]"
       }
     ],
     "data_points": [
@@ -6099,11 +6099,11 @@
     "conversations": [
       {
         "from": "human",
-        "value": "<data>\n这是采样的一组科学数据点，请你寻找一个表达式来拟合这组数据，你只需要生成表达式二叉树的先序遍历即可"
+        "value": "<data>\nHere is a sampled set of scientific data points. Please find an expression to fit this data set. You only need to generate the preorder traversal of the expression binary tree."
       },
       {
         "from": "gpt",
-        "value": "好的，我得到的表达式先序遍历是[-,x1,x2]"
+        "value": "OK, the preorder traversal of the expression I obtained is[-,x1,x2]"
       }
     ],
     "data_points": [
@@ -7156,11 +7156,11 @@
     "conversations": [
       {
         "from": "human",
-        "value": "<data>\n这是采样的一组科学数据点，请你寻找一个表达式来拟合这组数据，你只需要生成表达式二叉树的先序遍历即可"
+        "value": "<data>\nHere is a sampled set of scientific data points. Please find an expression to fit this data set. You only need to generate the preorder traversal of the expression binary tree."
       },
       {
         "from": "gpt",
-        "value": "好的，我得到的表达式先序遍历是[+,+,x1,x2,x3]"
+        "value": "OK, the preorder traversal of the expression I obtained is[+,+,x1,x2,x3]"
       }
     ],
     "data_points": [
@@ -8265,11 +8265,11 @@
     "conversations": [
       {
         "from": "human",
-        "value": "<data>\n这是采样的一组科学数据点，请你寻找一个表达式来拟合这组数据，你只需要生成表达式二叉树的先序遍历即可"
+        "value": "<data>\nHere is a sampled set of scientific data points. Please find an expression to fit this data set. You only need to generate the preorder traversal of the expression binary tree."
       },
       {
         "from": "gpt",
-        "value": "好的，我得到的表达式先序遍历是[+,*,x1,x2,x3]"
+        "value": "OK, the preorder traversal of the expression I obtained is[+,*,x1,x2,x3]"
       }
     ],
     "data_points": [
@@ -9166,11 +9166,11 @@
     "conversations": [
       {
         "from": "human",
-        "value": "<data>\n这是采样的一组科学数据点，请你寻找一个表达式来拟合这组数据，你只需要生成表达式二叉树的先序遍历即可"
+        "value": "<data>\nHere is a sampled set of scientific data points. Please find an expression to fit this data set. You only need to generate the preorder traversal of the expression binary tree."
       },
       {
         "from": "gpt",
-        "value": "好的，我得到的表达式先序遍历是[*,x1,x2]"
+        "value": "OK, the preorder traversal of the expression I obtained is[*,x1,x2]"
       }
     ],
     "data_points": [

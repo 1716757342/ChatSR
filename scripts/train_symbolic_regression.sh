@@ -1,40 +1,40 @@
 #!/bin/bash
-# 符号回归训练启动脚本 - 多GPU优化版本
-# 基于Qwen2.5-VL官方fintuning.sh，添加DeepSpeed支持
+# Symbolic regression training launch script - multi-GPU optimized version
+# Based on the official Qwen2.5-VL fintuning.sh, with DeepSpeed support added
 
 # ======================
-# 路径配置
+# Path configuration
 # ======================
-MODEL_PATH="/oceanfs/liyanjie/Qwen2.5_vl/Qwen2.5-VL-main/Qwen/Qwen2.5-VL-3B-Instruct"  # 预训练模型路径
-OUTPUT_DIR="./checkpoints/symbolic-regression-qwen"          # 输出目录
-CACHE_DIR="./cache"                                          # 缓存目录
-DATASETS="SYMBOLIC_REGRESSION%100"                           # 数据集配置
+MODEL_PATH="/path/to/Qwen2.5-VL-3B-Instruct"  # Pretrained model path
+OUTPUT_DIR="./checkpoints/symbolic-regression-qwen"          # Output directory
+CACHE_DIR="./cache"                                          # Cache directory
+DATASETS="SYMBOLIC_REGRESSION%100"                           # Dataset configuration
 
 # ======================
-# 分布式训练配置 - 多GPU支持
+# Distributed training configuration - multi-GPU support
 # ======================
-export CUDA_VISIBLE_DEVICES="0,1,2,3"                       # 使用4个GPU
+export CUDA_VISIBLE_DEVICES="0,1,2,3"                       # Use 4 GPUs
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-export NCCL_DEBUG=INFO                                          # NCCL调试信息（可选）
-# export NCCL_SOCKET_IFNAME=bond0                               # 网络接口（注释掉，让NCCL自动选择）
-export OMP_NUM_THREADS=4                                        # OpenMP线程数限制
-NPROC_PER_NODE=4                                                # 4GPU并行训练
-MASTER_ADDR="10.3.2.4"                                      # 主节点 IP
-MASTER_PORT=$(shuf -i 20000-29999 -n 1)                     # 随机端口，避免冲突
+export NCCL_DEBUG=INFO                                          # NCCL debug information (optional)
+# export NCCL_SOCKET_IFNAME=bond0                               # Network interface (commented out; let NCCL choose automatically)
+export OMP_NUM_THREADS=4                                        # OpenMP thread limit
+NPROC_PER_NODE=4                                                # 4-GPU parallel training
+MASTER_ADDR="10.3.2.4"                                      # Master node IP
+MASTER_PORT=$(shuf -i 20000-29999 -n 1)                     # Random port to avoid conflicts
 
-echo "🚀 开始符号回归模型训练 (4GPU分布式版本 + DeepSpeed)..."
-echo "模型路径: $MODEL_PATH"
-echo "输出目录: $OUTPUT_DIR"
-echo "GPU数量: $NPROC_PER_NODE"
-echo "主节点: $MASTER_ADDR:$MASTER_PORT"
+echo "🚀 Starting symbolic regression model training (4-GPU distributed version + DeepSpeed)..."
+echo "Model path: $MODEL_PATH"
+echo "Output directory: $OUTPUT_DIR"
+echo "Number of GPUs: $NPROC_PER_NODE"
+echo "Master node: $MASTER_ADDR:$MASTER_PORT"
 
 # ======================
-# 启动训练 - 添加DeepSpeed配置
+# Start training - add DeepSpeed configuration
 # ======================
 torchrun --nproc_per_node=$NPROC_PER_NODE \
          --master_addr=$MASTER_ADDR \
          --master_port=$MASTER_PORT \
-         /oceanfs/liyanjie/Qwen2.5_vl_SR_all/Qwen2.5-VL-main/train_symbolic_regression_fixed.py \
+         /path/to/ChatSR/train_symbolic_regression_fixed.py \
          --model_name_or_path $MODEL_PATH \
          --tune_mm_llm True \
          --tune_mm_vision True \
@@ -44,7 +44,7 @@ torchrun --nproc_per_node=$NPROC_PER_NODE \
          --cache_dir $CACHE_DIR \
          --bf16 True \
          --fp16 False \
-         --deepspeed /oceanfs/liyanjie/Qwen2.5_vl_SR_all/Qwen2.5-VL-main/qwen-vl-finetune/scripts/zero2.json \
+         --deepspeed /path/to/ChatSR/qwen-vl-finetune/scripts/zero2.json \
          --per_device_train_batch_size 2 \
          --gradient_accumulation_steps 2 \
          --learning_rate 2e-5 \
@@ -74,4 +74,4 @@ torchrun --nproc_per_node=$NPROC_PER_NODE \
          --save_safetensors False \
          --run_name "symbolic_regression_$(date +%Y%m%d_%H%M%S)"
 
-echo "✅ 符号回归模型训练完成!" 
+echo "✅ Symbolic regression model training completed!"

@@ -19,10 +19,10 @@ except ImportError:
     minimize = None
 
 # =====================
-# 直接在这里改路径
+# Change paths directly here
 # =====================
-MODEL_PATH = "/home/dataset-local/liyanjie/Qwen-SR-V2/checkpoints/symbolic-regression-qwen-positionids-fix/final_model/final_model"
-JSON_PATH = "/home/dataset-local/liyanjie/Qwen-SR-V2/symbolic_regression_data_20/test.json"
+MODEL_PATH = "/path/to/ChatSR/checkpoints/symbolic-regression-qwen-positionids-fix/final_model/final_model"
+JSON_PATH = "/path/to/ChatSR/symbolic_regression_data_20/test.json"
 DEVICE = "cuda"
 TORCH_DTYPE = "float32"
 MAX_NEW_TOKENS = 120
@@ -39,7 +39,7 @@ project_root = Path(__file__).parent
 qwen_finetune_path = project_root / "qwen-vl-finetune"
 if str(qwen_finetune_path) not in sys.path:
     sys.path.append(str(qwen_finetune_path))
-    print(f"已将 '{qwen_finetune_path}' 添加到 sys.path")
+    print(f"Added '{qwen_finetune_path}' to sys.path")
 
 try:
     from qwenvl.symbolic_regression.model import SymbolicRegressionQwenModel
@@ -47,9 +47,9 @@ try:
     from qwenvl.data import data_dict as DATASET_REGISTRY
     from qwenvl.data.data_symbolic_regression import make_symbolic_regression_data_module
 except ImportError as e:
-    print("❌ 无法导入符号回归模块。")
-    print(f"   请确认路径存在: {qwen_finetune_path}")
-    print(f"   原始错误: {e}")
+    print("❌ Unable to import symbolic regression module.")
+    print(f"   Please confirm the path exists: {qwen_finetune_path}")
+    print(f"   Original error: {e}")
     sys.exit(1)
 
 
@@ -67,7 +67,7 @@ MATH_TOKEN_RE = re.compile(r"<\|math_([A-Za-z0-9_]+)\|>")
 
 def select_device():
     if DEVICE == "cuda" and not torch.cuda.is_available():
-        print("⚠️ CUDA 不可用，切换到 CPU。")
+        print("⚠️ CUDA is unavailable; switching to CPU.")
         return torch.device("cpu")
     return torch.device(DEVICE)
 
@@ -113,9 +113,9 @@ def find_sample(samples, sample_id):
 def print_model_diagnostics(model, tokenizer):
     input_embeddings = model.get_input_embeddings().weight
     lm_head = model.lm_head.weight
-    print("\n🔎 模型诊断")
+    print("\n🔎 Model diagnostics")
     print(f"   tie_word_embeddings: {model.config.tie_word_embeddings}")
-    print(f"   lm_head/input_embeddings 共享 storage: {lm_head.data_ptr() == input_embeddings.data_ptr()}")
+    print(f"   lm_head/input_embeddings shared storage: {lm_head.data_ptr() == input_embeddings.data_ptr()}")
     math_ids = [tokenizer.convert_tokens_to_ids(token) for token in ["<|math_add|>", "<|math_x1|>", "<|math_C|>"]]
     math_ids = [token_id for token_id in math_ids if token_id is not None and token_id >= 0]
     if math_ids:
@@ -127,7 +127,7 @@ def prepare_generation_inputs(sample, tokenizer, sr_config, sr_processor, device
     raw = sample["raw"]
     data_points = raw.get("data_points")
     if data_points is None:
-        raise ValueError(f"样本 {sample['id']} 缺少 data_points。")
+        raise ValueError(f"Sample {sample['id']} is missing data_points。")
 
     if "<data>" not in prompt:
         prompt = "<data>\n" + prompt
@@ -197,7 +197,7 @@ def parse_preorder_tokens(tokens):
     def parse_at(pos):
         nonlocal const_counter
         if pos >= len(tokens):
-            raise ValueError("preorder token 不完整：表达式提前结束。")
+            raise ValueError("Incomplete preorder tokens: expression ended early.")
         token = tokens[pos]
         if token in BINARY_OPS:
             left, next_pos = parse_at(pos + 1)
@@ -212,7 +212,7 @@ def parse_preorder_tokens(tokens):
             node = ExprNode("const", index=const_counter)
             const_counter += 1
             return node, pos + 1
-        raise ValueError(f"未知 math token: <|math_{token}|>")
+        raise ValueError(f"Unknown math token: <|math_{token}|>")
 
     root, end_pos = parse_at(0)
     unused = tokens[end_pos:]
@@ -228,7 +228,7 @@ def safe_array(values):
 def evaluate_expr(node, x, constants):
     if node.op == "var":
         if node.index is None or node.index < 0 or node.index >= x.shape[1]:
-            raise ValueError(f"表达式引用了不存在的变量 x{(node.index or 0) + 1}，当前 X 只有 {x.shape[1]} 维。")
+            raise ValueError(f"Expression references a nonexistent variable x{(node.index or 0) + 1}，current X has only {x.shape[1]} dimensions.")
         return x[:, node.index]
     if node.op == "const":
         return np.full(x.shape[0], constants[node.index], dtype=np.float64)
@@ -259,7 +259,7 @@ def evaluate_expr(node, x, constants):
         elif node.op == "sqrt":
             result = np.sqrt(np.abs(child_values[0]) + EPS)
         else:
-            raise ValueError(f"不支持的 op: {node.op}")
+            raise ValueError(f"Unsupported op: {node.op}")
     return safe_array(result)
 
 
@@ -284,13 +284,13 @@ def expr_to_string(node, constants=None):
         return f"pow({args[0]}, {args[1]})"
     if node.op in UNARY_OPS:
         return f"{node.op}({args[0]})"
-    raise ValueError(f"不支持的 op: {node.op}")
+    raise ValueError(f"Unsupported op: {node.op}")
 
 
 def get_xy(sample):
     data_points = np.asarray(sample["raw"].get("data_points"), dtype=np.float64)
     if data_points.ndim != 2 or data_points.shape[1] < 2:
-        raise ValueError("data_points 必须是二维数组，并且至少包含一个自变量和 y。")
+        raise ValueError("data_points must be a 2D array and include at least one independent variable and y.")
     return data_points[:, :-1], data_points[:, -1]
 
 
@@ -309,7 +309,7 @@ def fit_constants_bfgs(root, n_constants, x, y):
         y_pred = evaluate_expr(root, x, np.zeros(0, dtype=np.float64))
         return np.zeros(0, dtype=np.float64), y_pred, r2_score(y, y_pred), float(np.mean((y - y_pred) ** 2))
     if minimize is None:
-        raise RuntimeError("当前 Python 环境未安装 scipy，无法执行 scipy.optimize.minimize(method='BFGS')。")
+        raise RuntimeError("scipy is not installed in the current Python environment, so scipy.optimize.minimize(method='BFGS') cannot be run.")
 
     rng = np.random.default_rng(SEED)
     starts = [np.zeros(n_constants), np.ones(n_constants), -np.ones(n_constants)]
@@ -346,37 +346,37 @@ def fit_constants_bfgs(root, n_constants, x, y):
 def analyze_prediction(sample, response_raw):
     tokens = extract_preorder_tokens(response_raw)
     if not tokens:
-        print("❌ 未在模型输出中找到 <|math_...|> preorder token，无法恢复表达式。")
+        print("❌ No <|math_...|> preorder tokens were found in the model output; cannot recover expression.")
         return
 
-    print("\n📌 提取到的 preorder:")
+    print("\n📌 Extracted preorder:")
     print(",".join(f"<|math_{token}|>" for token in tokens))
 
     try:
         root, n_constants, unused = parse_preorder_tokens(tokens)
     except ValueError as e:
-        print(f"❌ preorder 解析失败: {e}")
+        print(f"❌ Preorder parsing failed: {e}")
         return
 
     if unused:
-        print("⚠️ preorder 中有未使用的多余 token:")
+        print("⚠️ Unused extra tokens in preorder:")
         print(",".join(f"<|math_{token}|>" for token in unused))
 
     x, y = get_xy(sample)
-    print("\n🧮 恢复的表达式结构:")
+    print("\n🧮 Recovered expression structure:")
     print(expr_to_string(root))
-    print(f"常数个数: {n_constants}")
+    print(f"Number of constants: {n_constants}")
 
     try:
         constants, y_pred, r2, mse = fit_constants_bfgs(root, n_constants, x, y)
     except Exception as e:
-        print(f"❌ BFGS 常数优化失败: {e}")
+        print(f"❌ BFGS constant optimization failed: {e}")
         return
 
-    print("\n✅ BFGS 优化后的表达式:")
+    print("\n✅ Expression after BFGS optimization:")
     print(expr_to_string(root, constants))
     if n_constants:
-        print("常数:")
+        print("Constants:")
         for idx, value in enumerate(constants):
             print(f"  C{idx} = {value:.12g}")
     print(f"MSE: {mse:.12g}")
@@ -389,15 +389,15 @@ def run_inference_and_fit(model, tokenizer, sample, sr_config, sr_processor, dev
     )
 
     print("\n" + "=" * 70)
-    print(f"样本: {sample['id']}")
+    print(f"Sample: {sample['id']}")
     print(f"Prompt: {prompt}")
     if sample["expected_response"]:
-        print(f"训练/测试目标: {sample['expected_response']}")
-    print("\n大模型预测 skip_special_tokens=True:")
+        print(f"Training/test target: {sample['expected_response']}")
+    print("\nLLM prediction skip_special_tokens=True:")
     print(response)
-    print("\n大模型预测 skip_special_tokens=False:")
+    print("\nLLM prediction skip_special_tokens=False:")
     print(response_raw)
-    print("\n生成 token 前120个:")
+    print("\nFirst 120 generated tokens:")
     print(generated_tokens)
 
     analyze_prediction(sample, response_raw)
@@ -407,19 +407,19 @@ def run_inference_and_fit(model, tokenizer, sample, sr_config, sr_processor, dev
 def print_help():
     print(
         """
-可用命令:
-  help                         显示帮助
-  list [n]                     列出前 n 个样本，默认 20
-  use <sample_id>              选择当前样本
-  show                         显示当前样本信息
-  prompt                       手动输入/修改当前 prompt
-  infer                        对当前样本生成 preorder + BFGS 拟合 + R2
-  infer <sample_id>            对指定样本生成 preorder + BFGS 拟合 + R2
-  fit                          infer 的别名
-  fit <sample_id>              infer 的别名
-  target                       显示当前样本目标答案
-  target <sample_id>           显示指定样本目标答案
-  quit / exit                  退出
+Available commands:
+  help                         Show help
+  list [n]                     List the first n samples; default 20
+  use <sample_id>              Select current sample
+  show                         Show current sample information
+  prompt                       Manually enter/modify the current prompt
+  infer                        Generate preorder + BFGS fit + R2 for current sample
+  infer <sample_id>            Generate preorder + BFGS fit + R2 for specified sample
+  fit                          Alias for infer
+  fit <sample_id>              Alias for infer
+  target                       Show target answer for current sample
+  target <sample_id>           Show target answer for specified sample
+  quit / exit                  Exit
 """.strip()
     )
 
@@ -431,10 +431,10 @@ def main():
     dtype_map = {"float32": torch.float32, "float16": torch.float16, "bfloat16": torch.bfloat16}
     model_dtype = dtype_map[TORCH_DTYPE]
 
-    print(f"🤖 使用设备: {device}")
-    print(f"🔢 模型加载 dtype: {model_dtype}")
-    print(f"📦 模型路径: {MODEL_PATH}")
-    print(f"📖 JSON路径: {JSON_PATH}")
+    print(f"🤖 Using device: {device}")
+    print(f"🔢 Model loading dtype: {model_dtype}")
+    print(f"📦 Model path: {MODEL_PATH}")
+    print(f"📖 JSON path: {JSON_PATH}")
 
     tokenizer = AutoTokenizer.from_pretrained(
         MODEL_PATH,
@@ -452,24 +452,24 @@ def main():
 
     sr_config = SymbolicRegressionConfig()
     sr_processor = SymbolicRegressionDataProcessor(sr_config)
-    print(f"📊 内部临时 dataset_use: {AUTO_DATASET_NAME}%100 -> {JSON_PATH}")
+    print(f"📊 Internal temporary dataset_use: {AUTO_DATASET_NAME}%100 -> {JSON_PATH}")
     samples = build_samples_from_dataset_module(JSON_PATH, tokenizer)
 
-    print(f"✅ 样本数: {len(samples)}")
+    print(f"✅ Number of samples: {len(samples)}")
     print_model_diagnostics(model, tokenizer)
     print_help()
 
     current_sample = samples[0] if samples else None
     current_prompt = get_human_prompt(current_sample["raw"]) if current_sample else DEFAULT_PROMPT
     if current_sample:
-        print(f"\n当前样本: {current_sample['id']}")
-        print("当前 prompt 已使用该样本 JSON 中的 human prompt。")
+        print(f"\nCurrent sample: {current_sample['id']}")
+        print("The current prompt uses the human prompt from this sample JSON.")
 
     while True:
         try:
             command = input("sr-bfgs> ").strip()
         except (EOFError, KeyboardInterrupt):
-            print("\n退出。")
+            print("\nExit。")
             break
 
         if not command:
@@ -489,47 +489,47 @@ def main():
             continue
         if op == "use":
             if len(parts) < 2:
-                print("❌ 用法: use <sample_id>")
+                print("❌ Usage: use <sample_id>")
                 continue
             sample = find_sample(samples, parts[1])
             if sample is None:
-                print(f"❌ 未找到样本: {parts[1]}")
+                print(f"❌ Sample not found: {parts[1]}")
                 continue
             current_sample = sample
             current_prompt = get_human_prompt(current_sample["raw"]) or DEFAULT_PROMPT
-            print(f"✅ 当前样本: {current_sample['id']}")
-            print("✅ 当前 prompt 已切换为该样本 JSON 中的 human prompt。")
+            print(f"✅ Current sample: {current_sample['id']}")
+            print("✅ Current prompt switched to the human prompt from this sample JSON.")
             continue
         if op == "show":
             if current_sample is None:
-                print("❌ 当前没有样本。")
+                print("❌ There is no current sample.")
                 continue
             points = current_sample["raw"].get("data_points", [])
             print(f"ID: {current_sample['id']}")
-            print(f"数据点数量/维度: {len(points)} x {len(points[0]) if points else 0}")
-            print(f"当前 prompt: {current_prompt}")
+            print(f"Number/dimension of data points: {len(points)} x {len(points[0]) if points else 0}")
+            print(f"Current prompt: {current_prompt}")
             if current_sample["expected_response"]:
-                print(f"目标: {current_sample['expected_response']}")
+                print(f"Target: {current_sample['expected_response']}")
             continue
         if op == "prompt":
-            print("请输入 prompt；直接回车使用 DEFAULT_PROMPT。")
+            print("Enter a prompt; press Enter directly to use DEFAULT_PROMPT.")
             text = input("prompt> ").strip()
             current_prompt = text if text else DEFAULT_PROMPT
-            print(f"✅ 当前 prompt: {current_prompt}")
+            print(f"✅ Current prompt: {current_prompt}")
             continue
 
         target_sample = current_sample
         if len(parts) > 1:
             sample = find_sample(samples, parts[1])
             if sample is None:
-                print(f"❌ 未找到样本: {parts[1]}")
+                print(f"❌ Sample not found: {parts[1]}")
                 continue
             target_sample = sample
             current_sample = sample
             current_prompt = get_human_prompt(current_sample["raw"]) or DEFAULT_PROMPT
 
         if target_sample is None:
-            print("❌ 当前没有样本。")
+            print("❌ There is no current sample.")
             continue
 
         if op in {"infer", "fit"}:
@@ -537,7 +537,7 @@ def main():
         elif op == "target":
             print(target_sample["expected_response"])
         else:
-            print(f"❌ 未知命令: {op}")
+            print(f"❌ Unknown command: {op}")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 # #!/usr/bin/env python3
 # """
-# 修复版本的符号回归训练脚本 - 分布式训练专用
-# 解决DTensor混合错误的完整方案
+# Fixed symbolic regression training script - for distributed training
+# Complete solution for DTensor mixing errors
 # """
 
 # import os
@@ -39,7 +39,7 @@
 # local_rank = None
 
 # def rank0_print(*args):
-#     """在单GPU模式下或主进程中打印"""
+#     """Print in single-GPU mode or on the main process"""
 #     should_print = True
 #     if local_rank is not None:
 #         should_print = local_rank == 0
@@ -50,7 +50,7 @@
 #         print(*args)
 
 # def set_symbolic_regression_model(model_args, model):
-#     """设置符号回归模型的可训练参数"""
+#     """Set trainable parameters for the symbolic regression model"""
 #     if model_args.tune_mm_llm:
 #         for name, param in model.model.named_parameters():
 #             param.requires_grad = True
@@ -71,18 +71,18 @@
 #                 param.requires_grad = True
 
 # def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
-#     """HuggingFace Trainer的安全保存函数"""
+#     """Safe save function for HuggingFace Trainer"""
 #     try:
 #         trainer.save_model(output_dir)
 #     except Exception as e:
-#         rank0_print(f"标准保存失败，尝试手动保存: {e}")
+#         rank0_print(f"Standard save failed; trying manual save: {e}")
 #         if hasattr(trainer.model, 'module'):
 #             trainer.model.module.save_pretrained(output_dir)
 #         else:
 #             trainer.model.save_pretrained(output_dir)
 
 # def train_symbolic_regression_distributed(attn_implementation="flash_attention_2"):
-#     """符号回归分布式训练主函数 - 修复DTensor问题"""
+#     """Main symbolic regression distributed training function - fixes DTensor issues"""
 #     global local_rank
 
 #     parser = transformers.HfArgumentParser(
@@ -90,26 +90,26 @@
 #     )
 #     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-#     # 设置local_rank，兼容单GPU和多GPU模式
+#     # Set local_rank for compatibility with single-GPU and multi-GPU modes
 #     local_rank = getattr(training_args, 'local_rank', 0)
-#     if local_rank == -1:  # 单GPU模式下local_rank可能是-1
+#     if local_rank == -1:  # local_rank may be -1 in single-GPU mode
 #         local_rank = 0
 #     os.makedirs(training_args.output_dir, exist_ok=True)
 
-#     rank0_print("🚀 开始符号回归模型训练 (分布式修复版本)...")
-#     rank0_print(f"基础模型路径: {model_args.model_name_or_path}")
-#     rank0_print(f"输出目录: {training_args.output_dir}")
+#     rank0_print("🚀 Starting symbolic regression model training (distributed fixed version)...")
+#     rank0_print(f"Base model path: {model_args.model_name_or_path}")
+#     rank0_print(f"Output directory: {training_args.output_dir}")
 #     rank0_print(f"Local Rank: {local_rank}")
-#     rank0_print(f"是否使用DeepSpeed: {training_args.deepspeed is not None}")
-#     rank0_print(f"是否使用FSDP: {'fsdp' in training_args.__dict__ and training_args.fsdp}")
+#     rank0_print(f"Use DeepSpeed: {training_args.deepspeed is not None}")
+#     rank0_print(f"Use FSDP: {'fsdp' in training_args.__dict__ and training_args.fsdp}")
 
-#     # 创建符号回归配置
+#     # Create symbolic regression config
 #     sr_config = SymbolicRegressionConfig()
     
-#     # 🔧 关键修复：分布式环境下的模型加载策略
-#     rank0_print("📋 分布式安全的模型加载...")
+#     # 🔧 Key fix: model loading strategy for distributed environments
+#     rank0_print("📋 Distributed-safe model loading...")
     
-#     # 1. 首先加载基础模型配置（不加载权重）
+#     # 1. First load the base model config without weights
 #     if "qwen2.5" in model_args.model_name_or_path.lower():
 #         from transformers import Qwen2_5_VLConfig
 #         config = Qwen2_5_VLConfig.from_pretrained(model_args.model_name_or_path)
@@ -121,59 +121,59 @@
 #         data_args.model_type = "qwen2vl"
 #         base_model_class = Qwen2VLForConditionalGeneration
     
-#     # 2. 先创建符号回归模型架构（不加载权重）
+#     # 2. First create the symbolic regression model architecture without weights
 #     model = SymbolicRegressionQwenModel(config, sr_config)
     
-#     # 3. 🔧 关键：分布式安全的权重加载
-#     rank0_print("📋 分布式安全的权重加载...")
+#     # 3. 🔧 Key: distributed-safe weight loading
+#     rank0_print("📋 Distributed-safe weight loading...")
     
-#     # 检测是否在分布式环境中
+#     # Detect whether running in a distributed environment
 #     is_distributed = torch.distributed.is_available() and torch.distributed.is_initialized()
     
 #     if is_distributed:
-#         # 分布式环境：在主进程中加载权重，然后广播
+#         # Distributed environment: load weights in the main process, then broadcast
 #         if torch.distributed.get_rank() == 0:
-#             rank0_print("🔧 主进程加载预训练权重...")
-#             # 主进程加载权重（不使用device_map）
+#             rank0_print("🔧 Main process loading pretrained weights...")
+#             # Main process loads weights without using device_map
 #             base_model = base_model_class.from_pretrained(
 #                 model_args.model_name_or_path,
 #                 cache_dir=training_args.cache_dir,
 #                 torch_dtype=torch.bfloat16,
-#                 # 🔧 关键：分布式环境下不使用device_map
+#                 # 🔧 Key: do not use device_map in distributed environments
 #                 device_map=None,  
 #                 low_cpu_mem_usage=True
 #             )
             
-#             # 复制权重到符号回归模型
+#             # Copy weights to the symbolic regression model
 #             model.model.load_state_dict(base_model.model.state_dict(), strict=False)
 #             model.lm_head.load_state_dict(base_model.lm_head.state_dict())
             
-#             # 释放基础模型
+#             # Release base model
 #             del base_model
 #             torch.cuda.empty_cache()
-#             rank0_print("✅ 主进程权重加载完成")
+#             rank0_print("✅ Main process weight loading completed")
         
-#         # 同步所有进程
+#         # Synchronize all processes
 #         torch.distributed.barrier()
 #     else:
-#         # 单GPU环境：正常加载
-#         rank0_print("🔧 单GPU环境，正常加载权重...")
+#         # Single-GPU environment: load normally
+#         rank0_print("🔧 Single-GPU environment, loading weights normally...")
 #         base_model = base_model_class.from_pretrained(
 #             model_args.model_name_or_path,
 #             cache_dir=training_args.cache_dir,
 #             attn_implementation=attn_implementation,
 #             torch_dtype=torch.bfloat16,
-#             device_map="auto"  # 单GPU可以使用device_map
+#             device_map="auto"  # device_map can be used on single GPU
 #         )
         
-#         # 复制权重
+#         # Copy weights
 #         model.model.load_state_dict(base_model.model.state_dict(), strict=False)
 #         model.lm_head.load_state_dict(base_model.lm_head.state_dict())
         
-#         # 释放基础模型
+#         # Release base model
 #         del base_model
 #         torch.cuda.empty_cache()
-#         rank0_print("✅ 单GPU权重加载完成")
+#         rank0_print("✅ Single-GPU weight loading completed")
 
 #     if data_args.data_flatten:
 #         replace_qwen2_vl_attention_class()
@@ -187,7 +187,7 @@
 #                 output.requires_grad_(True)
 #             model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
 
-#     # 创建分词器
+#     # Create tokenizer
 #     tokenizer = transformers.AutoTokenizer.from_pretrained(
 #         model_args.model_name_or_path,
 #         cache_dir=training_args.cache_dir,
@@ -196,10 +196,10 @@
 #         use_fast=False,
 #     )
 
-#     # 设置模型可训练参数
+#     # Set model trainable parameters
 #     set_symbolic_regression_model(model_args, model)
 
-#     # 打印参数信息
+#     # Print parameter information
 #     is_main_process = True
 #     if torch.distributed.is_available() and torch.distributed.is_initialized():
 #         is_main_process = torch.distributed.get_rank() == 0
@@ -210,28 +210,28 @@
 #         if hasattr(model.model, 'print_trainable_parameters'):
 #             model.model.print_trainable_parameters()
         
-#         # 统计总参数
+#         # Count total parameters
 #         total_params = sum(p.numel() for p in model.parameters())
 #         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-#         rank0_print(f"📊 模型参数统计:")
-#         rank0_print(f"   总参数: {total_params:,}")
-#         rank0_print(f"   可训练参数: {trainable_params:,}")
-#         rank0_print(f"   可训练比例: {100 * trainable_params / total_params:.2f}%")
+#         rank0_print(f"📊 Model parameter statistics:")
+#         rank0_print(f"   Total parameters: {total_params:,}")
+#         rank0_print(f"   Trainable parameters: {trainable_params:,}")
+#         rank0_print(f"   Trainable ratio: {100 * trainable_params / total_params:.2f}%")
         
-#         # 显示内存使用情况
+#         # Show memory usage
 #         if torch.cuda.is_available():
 #             memory_allocated = torch.cuda.memory_allocated() / 1024**3
 #             memory_reserved = torch.cuda.memory_reserved() / 1024**3
-#             rank0_print(f"📊 当前GPU内存使用:")
-#             rank0_print(f"   已分配: {memory_allocated:.2f} GB")
-#             rank0_print(f"   已预留: {memory_reserved:.2f} GB")
+#             rank0_print(f"📊 Current GPU memory usage:")
+#             rank0_print(f"   Allocated: {memory_allocated:.2f} GB")
+#             rank0_print(f"   Reserved: {memory_reserved:.2f} GB")
 
-#     # 创建数据模块
-#     rank0_print("📊 创建符号回归数据模块...")
+#     # Create data module
+#     rank0_print("📊 Create symbolic regression data module...")
 #     data_module = make_symbolic_regression_data_module(tokenizer=tokenizer, data_args=data_args)
     
-#     # 创建训练器
-#     rank0_print("🔧 创建训练器...")
+#     # Create trainer
+#     rank0_print("🔧 Create trainer...")
 #     trainer = Trainer(
 #         model=model, 
 #         processing_class=tokenizer, 
@@ -239,19 +239,19 @@
 #         **data_module
 #     )
 
-#     # 检查是否有检查点
+#     # Check for checkpoints
 #     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-#         rank0_print("🔄 发现检查点，恢复训练...")
+#         rank0_print("🔄 Checkpoint found; resuming training...")
 #         trainer.train(resume_from_checkpoint=True)
 #     else:
-#         rank0_print("🎯 开始训练...")
+#         rank0_print("🎯 Start training...")
 #         trainer.train()
     
-#     # 保存模型
-#     rank0_print("💾 保存模型...")
+#     # Save model
+#     rank0_print("💾 Save model...")
 #     trainer.save_state()
     
-#     # 保存符号回归配置
+#     # Save symbolic regression config
 #     sr_config_path = os.path.join(training_args.output_dir, "symbolic_regression_config.json")
 #     with open(sr_config_path, 'w') as f:
 #         json.dump({
@@ -264,24 +264,24 @@
 #             'vocab_size': sr_config.vocab_size,
 #         }, f, indent=2)
     
-#     rank0_print(f"符号回归配置已保存到: {sr_config_path}")
+#     rank0_print(f"Symbolic regression config saved to: {sr_config_path}")
 
 #     model.config.use_cache = True
 #     safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
     
-#     rank0_print("✅ 符号回归模型训练完成!")
+#     rank0_print("✅ Symbolic regression model training completed!")
 
 # if __name__ == "__main__":
 #     train_symbolic_regression_distributed() 
 
 
 
-#### 版本2 ###
+#### Version2 ###
 
 #!/usr/bin/env python3
 """
-修复版本的符号回归训练脚本 - 分布式训练专用
-在原始版本基础上集成 LoRA 支持以实现参数高效微调
+Fixed symbolic regression training script - for distributed training
+Integrates LoRA support based on the original version for parameter-efficient fine-tuning
 """
 
 import os
@@ -296,11 +296,11 @@ import shutil
 import sys
 from pathlib import Path
 
-# --- 项目路径设置 ---
+# --- Project path setup ---
 project_root = Path(__file__).parent
 sys.path.append(str(project_root / "qwen-vl-finetune"))
 
-# --- 导入自定义模块 ---
+# --- Import custom modules ---
 from qwenvl.train.trainer import replace_qwen2_vl_attention_class
 from transformers import (
     Qwen2VLForConditionalGeneration,
@@ -321,14 +321,14 @@ from qwenvl.symbolic_regression.model import (
 from qwenvl.symbolic_regression.data_processor import SymbolicRegressionConfig
 
 
-# --- 核心修改：导入 PEFT/LoRA 相关库 ---
+# --- Core change: import PEFT/LoRA related libraries ---
 from peft import LoraConfig, get_peft_model
 
-# 全局变量，用于打印信息
+# Global variable for printing information
 local_rank = None
 
 def rank0_print(*args):
-    """仅在主进程中打印信息。"""
+    """Print information only on the main process."""
     should_print = True
     if local_rank is not None:
         should_print = local_rank == 0
@@ -376,7 +376,7 @@ def evaluate_training_loss_before_save(trainer, data_module, max_samples=None):
         trainer.model,
         data_module,
         trainer.args.device,
-        "训练结束保存前 teacher-forcing loss",
+        "teacher-forcing loss before saving at end of training",
         max_samples=max_samples,
         restore_train=True,
     )
@@ -387,7 +387,7 @@ def print_reload_weight_diagnostics(reference_state_dict, reloaded_model, tokeni
         return
 
     print("\n" + "=" * 60)
-    print("🔎 final_model 重载权重诊断")
+    print("🔎 final_model reloaded weight diagnostics")
     if loading_info is not None:
         missing_keys = loading_info.get("missing_keys", [])
         unexpected_keys = loading_info.get("unexpected_keys", [])
@@ -424,12 +424,12 @@ def print_reload_weight_diagnostics(reference_state_dict, reloaded_model, tokeni
             max_abs_diff = (reference_tensor - reloaded_tensor).abs().max().item()
             print(f"   {key}: max_abs_diff={max_abs_diff:.8f}")
     else:
-        print("   reference state_dict 未提供，跳过逐权重 max_abs_diff 对比。")
+        print("   reference state_dict not provided; skipping per-weight max_abs_diff comparison.")
 
     input_embeddings = reloaded_model.get_input_embeddings().weight
     lm_head = reloaded_model.lm_head.weight
     tied = input_embeddings.data_ptr() == lm_head.data_ptr()
-    print(f"   lm_head 与 input_embeddings 是否共享 storage: {tied}")
+    print(f"   lm_head shares storage with input_embeddings: {tied}")
 
     math_tokens = ["<|math_add|>", "<|math_x1|>", "<|math_C|>"]
     math_token_ids = [tokenizer.convert_tokens_to_ids(token) for token in math_tokens]
@@ -461,15 +461,15 @@ def reload_final_model_and_evaluate(final_model_dir, full_state_dict, tokenizer,
         reloaded_model,
         data_module,
         device,
-        "final_model 保存后立即重载 teacher-forcing loss",
+        "teacher-forcing loss immediately after saving and reloading final_model",
         restore_train=False,
     )
     del reloaded_model
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-# --- 修复：移除有问题的 safe_save_model_for_hf_trainer 函数 ---
-# 我们将直接使用 trainer.save_model()
+# --- Fix: remove the problematic safe_save_model_for_hf_trainer function ---
+# We will use trainer.save_model() directly
 
 def initialize_lm_head_from_embeddings(model):
     if not hasattr(model, "lm_head"):
@@ -477,7 +477,7 @@ def initialize_lm_head_from_embeddings(model):
     input_embeddings = model.get_input_embeddings().weight
     lm_head = model.lm_head.weight
     if input_embeddings.shape != lm_head.shape:
-        rank0_print(f"⚠️ 跳过 lm_head 初始化: embedding shape {tuple(input_embeddings.shape)} != lm_head shape {tuple(lm_head.shape)}")
+        rank0_print(f"⚠️ Skipping lm_head initialization: embedding shape {tuple(input_embeddings.shape)} != lm_head shape {tuple(lm_head.shape)}")
         return
     with torch.no_grad():
         lm_head.copy_(input_embeddings)
@@ -485,7 +485,7 @@ def initialize_lm_head_from_embeddings(model):
 
 
 def train_symbolic_regression_distributed(attn_implementation="flash_attention_2"):
-    """符号回归分布式训练主函数，集成LoRA"""
+    """Main symbolic regression distributed training function with LoRA integration"""
     global local_rank
 
     parser = transformers.HfArgumentParser(
@@ -503,16 +503,16 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
     rank0_print(f"Output directory: {training_args.output_dir}")
     rank0_print(f"Using FSDP: {'fsdp' in training_args.__dict__ and training_args.fsdp}")
 
-    # 创建符号回归配置
+    # Create symbolic regression config
     sr_config = SymbolicRegressionConfig()
 
-    # FSDP 要求各 rank 在包装前拥有一致的参数初始化；这里确保自定义 SetTransformer/projector 初始化一致。
+    # FSDP requires all ranks to have consistent parameter initialization before wrapping; this ensures custom SetTransformer/projector initialization is consistent.
     transformers.set_seed(training_args.seed)
     torch.manual_seed(training_args.seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(training_args.seed)
 
-    # --- 模型加载逻辑保持原始版本 ---
+    # --- Keep the original model loading logic ---
     rank0_print("📋 Loading model with FSDP-safe strategy...")
     if "qwen2.5" in model_args.model_name_or_path.lower():
         from transformers import Qwen2_5_VLConfig
@@ -526,10 +526,10 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
     config.tie_word_embeddings = False
     rank0_print("🔧 Disabled tie_word_embeddings so lm_head reloads independently from input embeddings.")
 
-    # 先创建符号回归模型架构（不加载权重）
+    # First create the symbolic regression model architecture without weights
     model = SymbolicRegressionQwenModel(config, sr_config)
     
-    # 分布式安全的权重加载
+    # Distributed-safe weight loading
     is_distributed = torch.distributed.is_available() and torch.distributed.is_initialized()
     if is_distributed:
         rank0_print("🔧 Loading pretrained weights on every rank before FSDP wrapping...")
@@ -547,7 +547,7 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
         torch.distributed.barrier()
         rank0_print("✅ Pretrained weights loaded on all ranks.")
     else:
-        # 单GPU环境
+        # Single-GPU environment
         rank0_print("🔧 Loading pretrained weights for single GPU...")
         base_model = base_model_class.from_pretrained(
             model_args.model_name_or_path,
@@ -566,15 +566,15 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
     if training_args.gradient_checkpointing:
         model.enable_input_require_grads()
 
-    # --- 核心修改：根据参数应用 LoRA 或进行全量微调 ---
+    # --- Core change: apply LoRA or perform full fine-tuning based on arguments ---
     if model_args.lora_enable:
         rank0_print("🚀 Enabling LoRA for parameter-efficient fine-tuning...")
         
-        # 首先冻结所有参数
+        # First freeze all parameters
         for name, param in model.named_parameters():
             param.requires_grad = False
 
-        # 按需解冻需要训练的部分 (vision tower 和 mlp projector)
+        # Unfreeze the parts that need training as needed (vision tower and MLP projector)
         if model_args.tune_mm_vision:
             model.visual.requires_grad_(True)
             rank0_print("   - Unfreezing Vision Tower (Set Transformer) for training.")
@@ -582,7 +582,7 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
             model.feature_projector.requires_grad_(True)
             rank0_print("   - Unfreezing MLP Projector for training.")
 
-        # 创建 LoRA 配置
+        # Create LoRA config
         lora_config = LoraConfig(
             r=model_args.lora_r,
             lora_alpha=model_args.lora_alpha,
@@ -592,12 +592,12 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
             task_type="CAUSAL_LM",
         )
         
-        # 应用 LoRA 到模型
+        # Apply LoRA to the model
         model = get_peft_model(model, lora_config)
         rank0_print("✅ LoRA has been successfully applied to the model.")
-        model.print_trainable_parameters() # 打印可训练参数信息
+        model.print_trainable_parameters() # Print trainable parameter information
     else:
-        # 如果不使用LoRA，则根据旧的参数设置
+        # If LoRA is not used, set parameters according to the old logic
         rank0_print("🔧 Performing full or partial fine-tuning (LoRA is disabled).")
         model.model.requires_grad_(model_args.tune_mm_llm)
         if hasattr(model, 'lm_head'):
@@ -607,7 +607,7 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
         if hasattr(model, 'feature_projector'):
             model.feature_projector.requires_grad_(model_args.tune_mm_mlp)
 
-    # 创建分词器
+    # Create tokenizer
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
         cache_dir=training_args.cache_dir,
@@ -616,11 +616,11 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
         use_fast=False,
     )
     # # =================================================================
-    # # ⬇️  关键：请将验证代码块移动到这里！ ⬇️
+    # # ⬇️  Key: move the validation code block here！ ⬇️
     # # =================================================================
     # rank0_print("🕵️  Verifying model state BEFORE training starts...")
 
-    # # 注意：在使用FSDP或DDP时，模型被包裹了一层，需要访问 .module 来获取原始模型
+    # # Note: when using FSDP or DDP, the model is wrapped, so access .module to get the original model
     # model_to_check = model.module if hasattr(model, 'module') else model
 
     # try:
@@ -635,7 +635,7 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
     #     if not (tokenizer_vocab_size == model_embedding_size == lm_head_size):
     #         rank0_print("🚨 FATAL ERROR: Vocabulary size mismatch detected before training!")
     #         # import sys
-    #         # sys.exit(1) # 可以取消注释，在发现错误时直接终止程序
+    #         # sys.exit(1) # Can be uncommented to terminate the program directly when an error is found
     #     else:
     #         rank0_print("✅ Vocabulary and model dimensions match. Starting training...")
 
@@ -644,10 +644,10 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
 
     # # =================================================================
 
-    # 创建数据模块
+    # Create data module
     rank0_print("📊 Creating symbolic regression data module...")
     data_module = make_symbolic_regression_data_module(tokenizer=tokenizer, data_args=data_args)
-    # 创建训练器
+    # Create trainer
     rank0_print("🔧 Creating Trainer...")
     trainer = Trainer(
         model=model, 
@@ -657,61 +657,61 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
     )
 
     # # =================================================================
-    # # ⬇️  请将下面的“最终验证”代码块完整地复制并粘贴到这里 ⬇️
+    # # ⬇️  Copy and paste the entire "final validation" code block below here ⬇️
     # # =================================================================
 
-    # # --- 最终验证：检查第一个训练批次的分词情况 ---
-    # # 只在主进程 (rank 0) 中执行此验证
+    # # --- Final validation: check tokenization of the first training batch ---
+    # # Run this validation only on the main process (rank 0)
     # if training_args.local_rank == 0:
     #     print("\n" + "="*60)
-    #     print("🕵️  最终验证: 正在检查第一个实际训练批次的分词情况...")
+    #     print("🕵️  Final validation: checking tokenization of the first real training batch...")
         
-    #     # 1. 获取训练数据加载器
+    #     # 1. Get the training data loader
     #     train_dataloader = trainer.get_train_dataloader()
         
-    #     # 2. 从中取出一个批次的数据
+    #     # 2. Take one batch of data from it
     #     first_batch = next(iter(train_dataloader))
         
-    #     # 3. 选择批次中的第一个样本进行检查
+    #     # 3. Select the first sample in the batch for inspection
     #     sample_input_ids = first_batch['input_ids'][0]
-    #     # --- 新增：直接打印Token ID列表 ---
-    #     print("\n--- 第一个样本的Token ID列表 (送入模型前) ---")
-    #     # 这就是模型嵌入层(Embedding Layer)接收到的最终输入
+    #     # --- New: print the token ID list directly ---
+    #     print("\n--- Token ID list of the first sample (before feeding into the model) ---")
+    #     # This is the final input received by the model embedding layer
     #     print(sample_input_ids.tolist())
-    #     # --- 新增结束 ---
-    #     # 4. 使用 tokenizer.convert_ids_to_tokens 来查看最原始的分词结果
-    #     # 这是最精确的验证方法
+    #     # --- End new section ---
+    #     # 4. Use tokenizer.convert_ids_to_tokens to view the raw tokenization result
+    #     # This is the most precise validation method
     #     token_list = tokenizer.convert_ids_to_tokens(sample_input_ids)
         
-    #     print(f"\n--- 第一个样本的原始分词列表 (部分展示) ---")
-    #     # 为了避免刷屏，我们只展示部分内容
+    #     print(f"\n--- Raw token list of the first sample (partial display) ---")
+    #     # To avoid flooding the screen, only part is shown
     #     print(token_list[:100]) 
     #     print("...")
 
-    #     # 5. 自动化检查我们关心的数学符号
+    #     # 5. Automatically check the math symbols we care about
     #     math_tokens_to_check = ["<|math_add|>", "<|math_log|>", "<|math_x1|>"]
     #     found_all_as_single = True
         
     #     for special_token in math_tokens_to_check:
     #         if special_token in token_list:
-    #             print(f"  ✅ 验证成功: 在分词列表中找到了完整的 '{special_token}'")
+    #             print(f"  ✅ Validation succeeded: found the complete '{special_token}'")
     #         else:
-    #             # 检查它是否被错误地切分了
-    #             # 例如，检查 'math' 和 '_' 是否存在
+    #             # Check whether it was incorrectly split
+    #             # For example, check 'math' and '_' exists
     #             if 'math' in token_list and '_' in token_list:
-    #                 print(f"  ❌ 验证失败: 未找到完整的 '{special_token}'，但可能已被切分！")
+    #                 print(f"  ❌ Validation failed: did not find the complete '{special_token}'，but it may have been split！")
     #                 found_all_as_single = False
 
-    #     print("\n--- 验证总结 ---")
+    #     print("\n--- Validation summary ---")
     #     if found_all_as_single:
-    #         print("🎉 最终确认: 数据在进入模型前的分词是正确的！")
+    #         print("🎉 Final confirmation: tokenization is correct before data enters the model！")
     #     else:
-    #         print("🚨 最终警告: 数据在进入模型前的分词是错误的！请检查您的Tokenizer创建和保存过程。")
+    #         print("🚨 Final warning: tokenization is incorrect before data enters the model. Check your tokenizer creation and saving process.")
         
     #     print("="*60 + "\n")
 
 
-    # 检查是否有检查点并恢复训练
+    # Check for checkpoints and resume training
     last_checkpoint = get_last_checkpoint(training_args.output_dir)
     resume_from_checkpoint = None
     if last_checkpoint is not None:
@@ -722,7 +722,7 @@ def train_symbolic_regression_distributed(attn_implementation="flash_attention_2
 
     evaluate_training_loss_before_save(trainer, data_module)
 
-    # 保存最终模型
+    # Save final model
     rank0_print("💾 Saving trainer state...")
     trainer.save_state()
 

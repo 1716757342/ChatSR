@@ -1,6 +1,6 @@
 """
-符号回归数据处理模块
-基于官方data_qwen.py，支持数据点输入而非图像输入
+Symbolic regression data processing module
+Based on official data_qwen.py, supports data point input instead of image input
 """
 
 import os
@@ -48,7 +48,7 @@ def preprocess_symbolic_regression_qwen(
     data_grid_info: List = [],
 ) -> Dict:
     """
-    预处理符号回归数据，替代原始的preprocess_qwen_2_visual
+    Preprocess symbolic regression data, replacing the original preprocess_qwen_2_visual
     """
     roles = {"human": "user", "gpt": "assistant"}
     system_message = "You are a helpful assistant specialized in symbolic regression and mathematical expression generation."
@@ -85,7 +85,7 @@ def preprocess_symbolic_regression_qwen(
             role = roles.get(role, role)
             if role == "user":
                 if "<data>" in content:
-                    # 替换<data>标记为特殊的数据token
+                    # Replace <data> markers with special data tokens
                     parts = content.split("<data>")
                     new_parts = []
                     for j in range(len(parts) - 1):
@@ -123,7 +123,7 @@ def preprocess_symbolic_regression_qwen(
     )
 
 class SymbolicRegressionDataset(Dataset):
-    """符号回归数据集，基于官方LazySupervisedDataset"""
+    """Symbolic regression dataset based on official LazySupervisedDataset"""
 
     def __init__(self, tokenizer: transformers.PreTrainedTokenizer, data_args):
         super(SymbolicRegressionDataset, self).__init__()
@@ -132,7 +132,7 @@ class SymbolicRegressionDataset(Dataset):
         dataset_list = data_list(dataset)
         rank0_print(f"Loading symbolic regression datasets: {dataset_list}")
         
-        # 符号回归配置
+        # Symbolic regression config
         self.sr_config = SymbolicRegressionConfig()
         self.sr_processor = SymbolicRegressionDataProcessor(self.sr_config)
         
@@ -170,37 +170,37 @@ class SymbolicRegressionDataset(Dataset):
 
     def process_data_points(self, data_points_list):
         """
-        处理数据点，类似于process_image_unified
+        Process data points, similar to process_image_unified
         
         Args:
-            data_points_list: 数据点列表
+            data_points_list: Data point list
             
         Returns:
-            torch.Tensor: 处理后的数据点张量
+            torch.Tensor: Processed data point tensor
         """
-        # 转换为numpy数组
+        # Convert to numpy array
         data_points = np.array(data_points_list, dtype=np.float32)
         
-        # 使用处理器处理数据点
+        # Use processor to process data points
         processed_data = self.sr_processor.process_data_points(data_points)
         
         return processed_data
 
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
-        # 获取数据样本
+        # Get data sample
         data_sample = self.list_data_dict[i]
         
-        # 提取对话和数据点
+        # Extract conversations and data points
         conversations = data_sample.get("conversations", [])
         data_points = data_sample.get("data_points", [])
-        # --- 关键检查：添加以下代码 ---
+        # --- Key check: add the following code ---
         temp_tensor = torch.tensor(data_points, dtype=torch.float32)
         if torch.isnan(temp_tensor).any() or torch.isinf(temp_tensor).any():
             print(f"🚨 WARNING: Invalid values (NaN or Inf) found in sample ID: {data_sample.get('id')}")
-            # 您可以选择跳过这个样本或直接报错
-            # 为了调试，可以先打印出来看看是哪些数据有问题
-        # --- 检查结束 ---
-        # 处理数据点
+            # You can choose to skip this sample or raise an error directly
+            # For debugging, print first to see which data has issues
+        # --- End check ---
+        # Process data points
         if data_points:
             processed_data_points = self.process_data_points(data_points)
             data_grid_thw = torch.tensor([[1, self.sr_config.pooling_outputs, 1]], dtype=torch.long)
@@ -208,7 +208,7 @@ class SymbolicRegressionDataset(Dataset):
             processed_data_points = None
             data_grid_thw = None
         
-        # 预处理对话
+        # Preprocess conversation
         data_dict = preprocess_symbolic_regression_qwen(
             [conversations], 
             self.tokenizer,
@@ -221,19 +221,19 @@ class SymbolicRegressionDataset(Dataset):
                 for key, value in data_dict.items()
             }
 
-        # 添加数据点信息
+        # Add data point information
         if processed_data_points is not None:
             data_dict["data_points"] = processed_data_points
             data_dict["data_grid_thw"] = data_grid_thw
         
-        # 添加位置ID（简化版本）
+        # Add position IDs (simplified version)
         seq_len = data_dict["input_ids"].shape[0]
         data_dict["position_ids"] = torch.arange(seq_len, dtype=torch.long)
         
         return data_dict
 
 def pad_and_cat_data(tensor_list):
-    """padding和连接数据点张量"""
+    """Pad and concatenate data point tensors"""
     if not tensor_list or tensor_list[0] is None:
         return None
     
@@ -256,7 +256,7 @@ def pad_and_cat_data(tensor_list):
 
 @dataclass
 class SymbolicRegressionDataCollator(object):
-    """符号回归数据整理器"""
+    """Symbolic regression data collator"""
 
     tokenizer: transformers.PreTrainedTokenizer
 
@@ -276,7 +276,7 @@ class SymbolicRegressionDataCollator(object):
             labels, batch_first=True, padding_value=IGNORE_INDEX
         )
         
-        # 处理位置ID
+        # Process position IDs
         position_ids = torch.nn.utils.rnn.pad_sequence(
             position_ids, batch_first=True, padding_value=0
         )
@@ -292,7 +292,7 @@ class SymbolicRegressionDataCollator(object):
             position_ids=position_ids,
         )
         
-        # 处理数据点
+        # Process data points
         data_points = [
             instance["data_points"] 
             for instance in instances 
@@ -319,7 +319,7 @@ class SymbolicRegressionDataCollator(object):
 def make_symbolic_regression_data_module(
     tokenizer: transformers.PreTrainedTokenizer, data_args
 ) -> Dict:
-    """创建符号回归数据模块"""
+    """Create symbolic regression data module"""
     train_dataset = SymbolicRegressionDataset(tokenizer=tokenizer, data_args=data_args)
     data_collator = SymbolicRegressionDataCollator(tokenizer=tokenizer)
     return dict(

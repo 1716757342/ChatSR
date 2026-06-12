@@ -1,36 +1,36 @@
 #!/bin/bash
-# 符号回归训练启动脚本 - 多GPU修复版本
-# 使用FSDP替代DeepSpeed，避免DTensor混合错误
+# Symbolic regression training launch script - multi-GPU fixed version
+# Use FSDP instead of DeepSpeed to avoid DTensor mixing errors
 
 # ======================
-# 路径配置
+# Path configuration
 # ======================
-MODEL_PATH="/home/dataset-local/liyanjie/Qwen-SR-V2/Qwen/Qwen2.5-VL-3B-Instruct-expend-token"
+MODEL_PATH="/path/to/ChatSR/Qwen/Qwen2.5-VL-3B-Instruct-expend-token"
 OUTPUT_DIR="./checkpoints/symbolic-regression-qwen-multi-gpu-20"
 CACHE_DIR="./cache"
 DATASETS="SYMBOLIC_REGRESSION_LEXICAL_POINT_20_TEST%100"
 
 # ======================
-# 方案2: 多GPU训练 - 使用FSDP替代DeepSpeed
+# Option 2: Multi-GPU training - use FSDP instead of DeepSpeed
 # ======================
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export OMP_NUM_THREADS=4
 NPROC_PER_NODE=4
-MASTER_ADDR="localhost"  # 改为localhost
+MASTER_ADDR="localhost"  # Changed to localhost
 MASTER_PORT=$(shuf -i 20000-29999 -n 1)
 
-echo "🚀 开始符号回归模型训练 (多GPU-FSDP版本)..."
-echo "模型路径: $MODEL_PATH"
-echo "输出目录: $OUTPUT_DIR"
-echo "GPU数量: $NPROC_PER_NODE"
-echo "主节点: $MASTER_ADDR:$MASTER_PORT"
+echo "🚀 Starting symbolic regression model training (multi-GPU FSDP version)..."
+echo "Model path: $MODEL_PATH"
+echo "Output directory: $OUTPUT_DIR"
+echo "Number of GPUs: $NPROC_PER_NODE"
+echo "Master node: $MASTER_ADDR:$MASTER_PORT"
 
-# 使用torchrun + FSDP（不使用DeepSpeed）
+# Use torchrun + FSDP (without DeepSpeed)
 torchrun --nproc_per_node=$NPROC_PER_NODE \
          --master_addr=$MASTER_ADDR \
          --master_port=$MASTER_PORT \
-         /home/dataset-local/liyanjie/Qwen-SR-V2/train_symbolic_regression_distributed_fixed.py \
+         /path/to/ChatSR/train_symbolic_regression_distributed_fixed.py \
          --model_name_or_path $MODEL_PATH \
          --tune_mm_llm True \
          --tune_mm_vision True \
@@ -71,4 +71,4 @@ torchrun --nproc_per_node=$NPROC_PER_NODE \
          --save_safetensors True \
          --run_name "symbolic_regression_fsdp_$(date +%Y%m%d_%H%M%S)"
 
-echo "✅ 符号回归模型训练完成!" 
+echo "✅ Symbolic regression model training completed!"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-扩展模型词汇表，添加数学符号特殊token
-用于符号回归任务的数学符号token化
+Expand the model vocabulary by adding math-symbol special tokens
+Math-symbol tokenization for symbolic regression tasks
 """
 
 import torch
@@ -13,38 +13,38 @@ from typing import Dict, List
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel
 import shutil
 
-# 添加项目路径以导入自定义模型
+# Add project path to import custom model
 project_root = Path(__file__).parent
 sys.path.append(str(project_root / "qwen-vl-finetune"))
 
 class MathTokenExtender:
-    """数学符号Token扩展器"""
+    """Math symbol token extender"""
     
     def __init__(self, model_path: str, output_path: str):
         self.model_path = model_path
         self.output_path = output_path
         
-        # 数学符号映射
+        # Math symbol mapping
         self.math_tokens = {
-            # 基本运算符
+            # Basic operators
             "<|math_add|>": "+",
             "<|math_sub|>": "-", 
             "<|math_mul|>": "*",
             "<|math_div|>": "/",
             "<|math_pow|>": "^",
             
-            # 三角函数
+            # Trigonometric functions
             "<|math_sin|>": "sin",
             "<|math_cos|>": "cos",
             "<|math_tan|>": "tan",
             
-            # 其他函数
+            # Other functions
             "<|math_log|>": "log",
             "<|math_exp|>": "exp",
             "<|math_sqrt|>": "sqrt",
             "<|math_abs|>": "abs",
             
-            # 变量
+            # Variables
             "<|math_x1|>": "x1",
             "<|math_x2|>": "x2",
             "<|math_x3|>": "x3",
@@ -56,7 +56,7 @@ class MathTokenExtender:
             "<|math_x9|>": "x9",
             "<|math_x10|>": "x10",
             
-            # 常数
+            # Constants
             "<|math_C|>": "C",
             "<|math_const_1|>": "1",
             "<|math_const_2|>": "2",
@@ -65,20 +65,20 @@ class MathTokenExtender:
             "<|math_const_5|>": "5",
         }
         
-        # 反向映射
+        # Reverse mapping
         self.symbol_to_token = {v: k for k, v in self.math_tokens.items()}
         
     def load_model_and_tokenizer(self):
-        """加载原始模型和tokenizer"""
-        print(f"📦 加载原始模型: {self.model_path}")
+        """Load the original model and tokenizer"""
+        print(f"📦 Loading original model: {self.model_path}")
         
-        # 加载tokenizer
+        # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_path,
             trust_remote_code=True
         )
         
-        # 检查模型类型
+        # Check model type
         config_path = os.path.join(self.model_path, "config.json")
         if os.path.exists(config_path):
             with open(config_path, 'r') as f:
@@ -87,13 +87,13 @@ class MathTokenExtender:
             model_type = config.get("model_type", "")
             architectures = config.get("architectures", [])
             
-            print(f"📋 模型信息:")
-            print(f"   模型类型: {model_type}")
-            print(f"   架构: {architectures}")
+            print(f"📋 Model information:")
+            print(f"   Model type: {model_type}")
+            print(f"   Architecture: {architectures}")
             
-            # 根据模型类型选择加载方式
+            # Choose loading method based on model type
             if "SymbolicRegressionQwenModel" in architectures:
-                print(f"🔧 检测到自定义符号回归模型，使用专用加载方式")
+                print(f"🔧 Detected custom symbolic regression model; using dedicated loading method")
                 try:
                     from qwenvl.symbolic_regression.model import SymbolicRegressionQwenModel
                     self.model = SymbolicRegressionQwenModel.from_pretrained(
@@ -102,10 +102,10 @@ class MathTokenExtender:
                         trust_remote_code=True,
                         low_cpu_mem_usage=True
                     )
-                    print(f"✅ 使用SymbolicRegressionQwenModel加载成功")
+                    print(f"✅ Loaded successfully with SymbolicRegressionQwenModel")
                 except Exception as e:
-                    print(f"⚠️ 使用SymbolicRegressionQwenModel加载失败: {e}")
-                    print(f"🔧 尝试使用AutoModel加载...")
+                    print(f"⚠️ Failed to load with SymbolicRegressionQwenModel: {e}")
+                    print(f"🔧 Trying AutoModel loading...")
                     self.model = AutoModel.from_pretrained(
                         self.model_path,
                         torch_dtype=torch.float16,
@@ -113,7 +113,7 @@ class MathTokenExtender:
                         low_cpu_mem_usage=True
                     )
             elif model_type == "qwen2_5_vl" or any("Qwen2_5_VL" in arch for arch in architectures):
-                print(f"🔧 检测到Qwen2.5-VL模型，使用AutoModel加载方式")
+                print(f"🔧 Detected Qwen2.5-VL model; using AutoModel loading")
                 self.model = AutoModel.from_pretrained(
                     self.model_path,
                     torch_dtype=torch.float16,
@@ -121,8 +121,8 @@ class MathTokenExtender:
                     low_cpu_mem_usage=True
                 )
             else:
-                # 标准模型
-                print(f"🔧 使用标准模型加载方式")
+                # Standard model
+                print(f"🔧 Using standard model loading")
                 self.model = AutoModelForCausalLM.from_pretrained(
                     self.model_path,
                     torch_dtype=torch.float16,
@@ -130,8 +130,8 @@ class MathTokenExtender:
                     low_cpu_mem_usage=True
                 )
         else:
-            # 没有config.json，尝试标准方式
-            print(f"🔧 未找到config.json，使用标准模型加载方式")
+            # config.json not found; trying standard loading
+            print(f"🔧 config.json not found; using standard model loading")
             self.model = AutoModelForCausalLM.from_pretrained(
                 self.model_path,
                 torch_dtype=torch.float16,
@@ -139,11 +139,11 @@ class MathTokenExtender:
                 low_cpu_mem_usage=True
             )
         
-        print(f"✅ 原始模型加载完成")
-        print(f"   原始词汇表大小: {len(self.tokenizer.vocab)}")
+        print(f"✅ Original model loaded")
+        print(f"   Original vocabulary size: {len(self.tokenizer.vocab)}")
         
     def check_existing_tokens(self):
-        """检查已存在的数学符号token"""
+        """Check existing math-symbol tokens"""
         existing_tokens = []
         missing_tokens = []
         
@@ -153,161 +153,161 @@ class MathTokenExtender:
             else:
                 missing_tokens.append(token)
         
-        print(f"📊 Token状态检查:")
-        print(f"   已存在: {len(existing_tokens)} 个")
-        print(f"   需要添加: {len(missing_tokens)} 个")
+        print(f"📊 Token status check:")
+        print(f"   Existing: {len(existing_tokens)} items")
+        print(f"   Need to add: {len(missing_tokens)} items")
         
         if existing_tokens:
-            print(f"   已存在的token: {existing_tokens[:5]}...")
+            print(f"   Existing tokens: {existing_tokens[:5]}...")
         
         return existing_tokens, missing_tokens
     
     def add_math_tokens(self):
-        """添加数学符号token到词汇表"""
+        """Add math-symbol tokens to the vocabulary"""
         existing_tokens, missing_tokens = self.check_existing_tokens()
         
         if not missing_tokens:
-            print(f"✅ 所有数学符号token已存在，无需添加")
+            print(f"✅ All math-symbol tokens already exist; no need to add")
             return
         
-        print(f"➕ 添加 {len(missing_tokens)} 个数学符号token...")
+        print(f"➕ Adding {len(missing_tokens)} math-symbol tokens...")
         
-        # 获取原始嵌入矩阵
+        # Get original embedding matrix
         original_embeddings = self.model.get_input_embeddings()
         original_vocab_size = original_embeddings.weight.shape[0]
         embedding_dim = original_embeddings.weight.shape[1]
         
-        # 添加新token到tokenizer
+        # Add new tokens to tokenizer
         new_tokens = [token for token in missing_tokens]
         num_added = self.tokenizer.add_tokens(new_tokens)
         
-        print(f"✅ 成功添加 {num_added} 个token到词汇表")
-        print(f"   新词汇表大小: {len(self.tokenizer.vocab)}")
+        print(f"✅ Successfully added {num_added} tokens to the vocabulary")
+        print(f"   New vocabulary size: {len(self.tokenizer.vocab)}")
         
-        # 调整模型嵌入矩阵大小
+        # Resize model embedding matrix
         self.model.resize_token_embeddings(len(self.tokenizer))
         
-        # 初始化新token的嵌入
+        # Initialize embeddings for new tokens
         self.initialize_new_embeddings(original_vocab_size, len(self.tokenizer))
         
-        print(f"✅ 模型嵌入矩阵已调整")
+        print(f"✅ Model embedding matrix resized")
         
     def initialize_new_embeddings(self, original_vocab_size: int, new_vocab_size: int):
-        """初始化新token的嵌入向量"""
+        """Initialize embedding vectors for new tokens"""
         if original_vocab_size == new_vocab_size:
             return
             
-        print(f"🔧 初始化新token嵌入向量...")
+        print(f"🔧 Initializing new token embedding vectors...")
         
-        # 获取调整后的嵌入矩阵
+        # Get resized embedding matrix
         embeddings = self.model.get_input_embeddings()
         
         with torch.no_grad():
-            # 对于每个新添加的数学符号token，使用相关符号的嵌入进行初始化
+            # For each newly added math-symbol token, initialize with embeddings of related symbols
             for token, symbol in self.math_tokens.items():
-                # 获取新token的ID
+                # Get the new token ID
                 token_ids = self.tokenizer.encode(token, add_special_tokens=False)
                 if len(token_ids) == 1:
                     new_token_idx = token_ids[0]
                     
-                    # 确保索引在有效范围内
+                    # Ensure the index is in the valid range
                     if new_token_idx >= original_vocab_size and new_token_idx < new_vocab_size:
-                        # 尝试找到相关符号的嵌入
+                        # Try to find embeddings of related symbols
                         related_embeddings = []
                         
-                        # 搜索相关的token
+                        # Search for related tokens
                         for vocab_token, vocab_idx in self.tokenizer.vocab.items():
                             if vocab_idx < original_vocab_size:
                                 if symbol in vocab_token.lower() or any(c in vocab_token for c in symbol):
                                     related_embeddings.append(embeddings.weight[vocab_idx])
                         
-                        # 如果找到相关嵌入，使用它们的平均值
+                        # If related embeddings are found, use their average
                         if related_embeddings:
                             avg_embedding = torch.stack(related_embeddings).mean(dim=0)
                             embeddings.weight[new_token_idx] = avg_embedding
-                            print(f"   ✅ {token} (ID: {new_token_idx}) 使用相关嵌入初始化")
+                            print(f"   ✅ {token} (ID: {new_token_idx}) initialized with related embeddings")
                         else:
-                            # 否则使用随机初始化（小方差）
+                            # Otherwise use random initialization with small variance
                             embeddings.weight[new_token_idx] = torch.randn(embeddings.weight.shape[1]) * 0.02
-                            print(f"   🔧 {token} (ID: {new_token_idx}) 使用随机初始化")
+                            print(f"   🔧 {token} (ID: {new_token_idx}) initialized randomly")
                     else:
-                        print(f"   ⚠️ {token} 索引超出范围: {new_token_idx}")
+                        print(f"   ⚠️ {token} index out of range: {new_token_idx}")
         
-        print(f"✅ 新token嵌入向量初始化完成")
+        print(f"✅ New token embedding vector initialization completed")
     
     def verify_tokens(self):
-        """验证添加的token"""
-        print(f"🔍 验证数学符号token...")
+        """Validate added tokens"""
+        print(f"🔍 Validating math-symbol tokens...")
         
         success_count = 0
         
         for token, symbol in self.math_tokens.items():
             try:
-                # 编码token
+                # Encode token
                 token_ids = self.tokenizer.encode(token, add_special_tokens=False)
                 
-                # 检查是否为单个token
+                # Check whether it is a single token
                 if len(token_ids) == 1:
-                    # 解码验证
+                    # Decode validation
                     decoded = self.tokenizer.decode(token_ids[0])
                     if decoded == token:
                         success_count += 1
                         print(f"   ✅ {token} -> ID: {token_ids[0]} ({symbol})")
                     else:
-                        print(f"   ❌ {token} 解码不匹配: {decoded}")
+                        print(f"   ❌ {token} decode mismatch: {decoded}")
                 else:
-                    print(f"   ❌ {token} 被分割为多个token: {token_ids}")
+                    print(f"   ❌ {token} was split into multiple tokens: {token_ids}")
                     
             except Exception as e:
-                print(f"   ❌ {token} 验证失败: {e}")
+                print(f"   ❌ {token} validation failed: {e}")
         
-        print(f"📊 验证结果: {success_count}/{len(self.math_tokens)} 个token成功")
+        print(f"📊 Validation result: {success_count}/{len(self.math_tokens)} tokens succeeded")
         
         return success_count == len(self.math_tokens)
     
     def save_extended_model(self):
-        """保存扩展后的模型"""
-        print(f"💾 保存扩展后的模型到: {self.output_path}")
+        """Save the expanded model"""
+        print(f"💾 Saving expanded model to: {self.output_path}")
         
-        # 创建输出目录
+        # Create output directory
         os.makedirs(self.output_path, exist_ok=True)
         
-        # 保存tokenizer
+        # Save tokenizer
         self.tokenizer.save_pretrained(self.output_path)
         
-        # 保存模型
+        # Save model
         self.model.save_pretrained(self.output_path)
         
-        # 保存数学符号映射
+        # Save math symbol mapping
         mapping_file = os.path.join(self.output_path, "math_token_mapping.json")
         with open(mapping_file, 'w', encoding='utf-8') as f:
             json.dump(self.math_tokens, f, indent=2, ensure_ascii=False)
         
-        print(f"✅ 模型保存完成")
-        print(f"   词汇表大小: {len(self.tokenizer.vocab)}")
-        print(f"   模型参数: {self.model.num_parameters():,}")
+        print(f"✅ Model saved")
+        print(f"   Vocabulary size: {len(self.tokenizer.vocab)}")
+        print(f"   Model parameters: {self.model.num_parameters():,}")
         
     def create_usage_guide(self):
-        """创建使用说明"""
-        guide_content = f"""# 数学符号Token扩展模型使用说明
+        """Create usage guide"""
+        guide_content = f"""# Math Symbol Token Expanded Model Usage Guide
 
-## 模型信息
-- 原始模型: {self.model_path}
-- 扩展后模型: {self.output_path}
-- 新增token数量: {len(self.math_tokens)}
+## Model information
+- Original model: {self.model_path}
+- Expanded model: {self.output_path}
+- Number of new tokens: {len(self.math_tokens)}
 
-## 数学符号映射
+## Math symbol mapping
 
-### 基本运算符
+### Basic operators
 """
         
-        # 按类别组织token
+        # Organize tokens by category
         categories = {
-            "基本运算符": ["+", "-", "*", "/", "^"],
-            "三角函数": ["sin", "cos", "tan"],
-            "其他函数": ["log", "exp", "sqrt", "abs"],
-            "变量": [f"x{i}" for i in range(1, 11)],
-            "常数": ["C", "1", "2", "3", "4", "5"]
+            "Basic operators": ["+", "-", "*", "/", "^"],
+            "Trigonometric functions": ["sin", "cos", "tan"],
+            "Other functions": ["log", "exp", "sqrt", "abs"],
+            "Variables": [f"x{i}" for i in range(1, 11)],
+            "Constants": ["C", "1", "2", "3", "4", "5"]
         }
         
         for category, symbols in categories.items():
@@ -318,122 +318,122 @@ class MathTokenExtender:
                     guide_content += f"- {symbol} -> {token}\n"
         
         guide_content += f"""
-## 使用示例
+## Usage example
 
-### Python代码示例
+### Python code example
 ```python
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-# 加载扩展后的模型
+# Load the expanded model
 tokenizer = AutoTokenizer.from_pretrained('{self.output_path}')
 model = AutoModelForCausalLM.from_pretrained('{self.output_path}')
 
-# 示例：编码数学表达式
+# Example: encode a math expression
 expression = ["<|math_add|>", "<|math_x1|>", "<|math_x2|>"]  # x1 + x2
 tokens = tokenizer.encode(expression, add_special_tokens=False)
 print(f"Token IDs: {{tokens}}")
 
-# 解码验证
+# Decode validation
 decoded = tokenizer.decode(tokens)
 print(f"Decoded: {{decoded}}")
 ```
 
-### 表达式格式转换
+### Expression format conversion
 ```python
-# 标准格式: ["+", "x1", "x2"]
-# 数学token格式: ["<|math_add|>", "<|math_x1|>", "<|math_x2|>"]
+# Standard format: ["+", "x1", "x2"]
+# Math token format: ["<|math_add|>", "<|math_x1|>", "<|math_x2|>"]
 
 def convert_to_math_tokens(standard_tokens):
     mapping = {{mapping_str}}
     return [mapping.get(token, token) for token in standard_tokens]
 
-# 使用示例
+# Usage example
 standard_expr = ["+", "x1", "x2"]
 math_expr = convert_to_math_tokens(standard_expr)
 print(f"Math tokens: {{math_expr}}")
 ```
 
-## 注意事项
+## Notes
 
-1. 训练数据需要使用数学符号token格式
-2. 推理时确保使用正确的token格式
-3. 模型需要在扩展后重新训练以学习新token的语义
-4. 建议使用较小的学习率进行微调
+1. Training data must use the math-symbol token format
+2. Ensure the correct token format is used during inference
+3. The model needs to be retrained after expansion to learn the semantics of new tokens
+4. Use a smaller learning rate for fine-tuning
 
-## 测试验证
+## Test validation
 
-使用 `test_math_token_inference.py` 脚本验证模型功能：
+Use the `test_math_token_inference.py` script to validate model functionality：
 
 ```bash
 python test_math_token_inference.py --checkpoint {self.output_path} --train_data path/to/train.json
 ```
 """
         
-        # 保存使用说明
+        # Save usage guide
         guide_file = os.path.join(self.output_path, "README.md")
         with open(guide_file, 'w', encoding='utf-8') as f:
             mapping_str = json.dumps(self.symbol_to_token, indent=2)
-            # 替换模板中的映射字符串
+            # Replace the mapping string in the template
             final_content = guide_content.replace("{mapping_str}", mapping_str)
             f.write(final_content)
         
-        print(f"📖 使用说明已保存到: {guide_file}")
+        print(f"📖 Usage guide saved to: {guide_file}")
     
     def run_extension(self):
-        """运行完整的扩展流程"""
-        print(f"🚀 开始扩展模型词汇表")
+        """Run the complete expansion workflow"""
+        print(f"🚀 Starting model vocabulary expansion")
         print(f"=" * 60)
         
-        # 加载模型
+        # Load model
         self.load_model_and_tokenizer()
         
-        # 添加数学符号token
+        # Add math-symbol tokens
         self.add_math_tokens()
         
-        # 验证token
+        # Validate tokens
         if not self.verify_tokens():
-            print(f"❌ Token验证失败")
+            print(f"❌ Token validation failed")
             return False
         
-        # 保存扩展后的模型
+        # Save the expanded model
         self.save_extended_model()
         
-        # 创建使用说明
+        # Create usage guide
         self.create_usage_guide()
         
         print(f"\n" + "=" * 60)
-        print(f"🎉 模型词汇表扩展完成!")
-        print(f"原始模型: {self.model_path}")
-        print(f"扩展后模型: {self.output_path}")
-        print(f"新增token: {len(self.math_tokens)} 个")
+        print(f"🎉 Model vocabulary expansion completed!")
+        print(f"Original model: {self.model_path}")
+        print(f"Expanded model: {self.output_path}")
+        print(f"New tokens: {len(self.math_tokens)} items")
         print(f"=" * 60)
         
         return True
 
 
 def main():
-    """主函数"""
+    """Main function"""
     import argparse
     
-    parser = argparse.ArgumentParser(description='扩展模型词汇表，添加数学符号token')
+    parser = argparse.ArgumentParser(description='Expand the model vocabulary by adding math-symbol tokens')
     parser.add_argument('--model_path', type=str, required=True,
-                      help='原始模型路径')
+                      help='Original model path')
     parser.add_argument('--output_path', type=str, required=True,
-                      help='扩展后模型保存路径')
+                      help='Expanded model save path')
     parser.add_argument('--verify_only', action='store_true',
-                      help='仅验证已存在的数学符号token')
+                      help='Only validate existing math-symbol tokens')
     
     args = parser.parse_args()
     
-    # 创建扩展器
+    # Create extender
     extender = MathTokenExtender(args.model_path, args.output_path)
     
     if args.verify_only:
-        print(f"🔍 仅验证模式")
+        print(f"🔍 Validation-only mode")
         extender.load_model_and_tokenizer()
         extender.verify_tokens()
     else:
-        # 运行完整扩展
+        # Run complete expansion
         success = extender.run_extension()
         exit(0 if success else 1)
 
@@ -444,8 +444,8 @@ if __name__ == "__main__":
 
 """
   python expend_tokens.py \
-    --model_path /home/dataset-local/liyanjie/Qwen2.5-VL-main/Qwen/Qwen2.5-VL-3B-Instruct \
-    --output_path /home/dataset-local/liyanjie/Qwen-SR-V2/Qwen/Qwen2.5-VL-3B-Instruct-expend-token
+    --model_path /path/to/Qwen2.5-VL-3B-Instruct \
+    --output_path /path/to/ChatSR/Qwen/Qwen2.5-VL-3B-Instruct-expend-token
 """
 
 

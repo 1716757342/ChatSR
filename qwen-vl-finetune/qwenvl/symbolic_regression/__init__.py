@@ -1,6 +1,6 @@
 """
-符号回归模块 - 基于Qwen2.5-VL框架
-替换ViT为Set Transformer，支持数学表达式生成
+Symbolic regression module based on the Qwen2.5-VL framework
+Replaces ViT with Set Transformer and supports mathematical expression generation
 """
 
 from .set_transformer import SetTransformerEncoder

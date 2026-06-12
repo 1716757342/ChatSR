@@ -26,59 +26,59 @@ VIDEOCHATGPT = {
     "data_path": "PATH_TO_VIDEOCHATGPT_DATA",
 }
 DEMO1 = {
-    "annotation_path": "/oceanfs/liyanjie/Qwen2.5_vl/Qwen2.5-VL-main/qwen-vl-finetune/demo/single_images.json",
-    "data_path": "/oceanfs/liyanjie/Qwen2.5_vl/Qwen2.5-VL-main/qwen-vl-finetune/",
+    "annotation_path": "/path/to/ChatSR/qwen-vl-finetune/demo/single_images.json",
+    "data_path": "/path/to/ChatSR/qwen-vl-finetune/",
 }
 
-# 符号回归数据集配置
+# Symbolic regression dataset config
 SYMBOLIC_REGRESSION = {
-    "annotation_path": "/oceanfs/liyanjie/Qwen2.5_vl_SR_all_cp/Qwen2.5-VL-main/symbolic_regression_data/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data/train.json",
     "data_path": "",
 }
 SYMBOLIC_REGRESSION_1k = {
-    "annotation_path": "/oceanfs/liyanjie/Qwen2.5_vl_SR_all_cp/Qwen2.5-VL-main/symbolic_regression_data_2/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_2/train.json",
     "data_path": "",
 }
 SYMBOLIC_REGRESSION_10k = {
-    "annotation_path": "/oceanfs/liyanjie/Qwen2.5_vl_SR_all_cp/Qwen2.5-VL-main/symbolic_regression_data_10000/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_10000/train.json",
     "data_path": "",
 }
 SYMBOLIC_REGRESSION_20W = {
-    "annotation_path": "/oceanfs/liyanjie/Qwen2.5_vl_SR_all_cp/Qwen2.5-VL-main/symbolic_regression_data_20W/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_20W/train.json",
     "data_path": "",
 }
 SYMBOLIC_REGRESSION_1M = {
-    "annotation_path": "/oceanfs/liyanjie/Qwen2.5_vl_SR_all_cp/Qwen2.5-VL-main/symbolic_regression_data_1M/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_1M/train.json",
     "data_path": "",
 }
 SYMBOLIC_REGRESSION_1000_NO_TEXT = {
-    "annotation_path": "/oceanfs/liyanjie/Qwen2.5_vl_SR_all_cp/Qwen2.5-VL-main/symbolic_regression_data_1000_no_text/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_1000_no_text/train.json",
     "data_path": "",
 }
 SYMBOLIC_REGRESSION_2w = {
-    "annotation_path": "/oceanfs/liyanjie/Qwen2.5_vl_SR_all_cp/Qwen2.5-VL-main/symbolic_regression_data_2w/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_2w/train.json",
     "data_path": "",
 }
 SYMBOLIC_REGRESSION_2M = {
-    "annotation_path": "/oceanfs/liyanjie/Qwen2.5_vl_SR_all_cp/Qwen2.5-VL-main/symbolic_regression_data_lexical_20/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_lexical_20/train.json",
     "data_path": "",
 }
 SYMBOLIC_REGRESSION_100 = {
-    "annotation_path": "/oceanfs/liyanjie/Qwen2.5_vl_SR_all_cp/Qwen2.5-VL-main/symbolic_regression_data_symbol_100/val.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_symbol_100/val.json",
     "data_path": "",
 }
 
 SYMBOLIC_REGRESSION_LEXICAL_2M = {
-    "annotation_path": "/oceanfs/liyanjie/Qwen2.5_vl_SR_all_cp/Qwen2.5-VL-main/symbolic_regression_data_lexical_2M/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_lexical_2M/train.json",
     "data_path": "",
 }
 
 SYMBOLIC_REGRESSION_LEXICAL_POINT_20 = {
-    "annotation_path": "/home/dataset-local/liyanjie/Qwen-SR-V2/symbolic_regression_data_20/train.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_20/train.json",
     "data_path": "",
 }
 SYMBOLIC_REGRESSION_LEXICAL_POINT_20_TEST = {
-    "annotation_path": "/home/dataset-local/liyanjie/Qwen-SR-V2/symbolic_regression_data_20/test.json",
+    "annotation_path": "/path/to/ChatSR/symbolic_regression_data_20/test.json",
     "data_path": "",
 }
 

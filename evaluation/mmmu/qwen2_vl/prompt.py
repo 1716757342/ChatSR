@@ -106,7 +106,7 @@ class Qwen2VLPromptMixin:
 
     def _build_mcq_prompt(self, line, dataset: str) -> list[dict[str, str]]:
         """change the prompt for MCQ dataset: use chinese prompt if the question contains chinese characters."""
-        MCQ_CN_PROMPT = '请直接回答选项字母。'
+        MCQ_CN_PROMPT = 'Answer directly with the option letter.'
         MCQ_EN_PROMPT = 'Please select the correct answer from the options above.'
 
         import string

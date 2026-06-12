@@ -1,164 +1,164 @@
-# 符号回归多GPU训练故障排除指南
+# Symbolic Regression Multi-GPU Training Troubleshooting Guide
 
-## 🚨 常见问题及解决方案
+## 🚨 Common Issues and Solutions
 
-### 1. DeepSpeed配置文件错误
+### 1. DeepSpeed Configuration File Error
 
-**错误信息：**
+**Error message:**
 ```
 ValueError: Expected a string path to an existing deepspeed config
 ```
 
-**解决方案：**
+**Solution:**
 ```bash
-# 确保在正确的目录下运行脚本
-cd /oceanfs/liyanjie/Qwen2.5_vl_SR_all/Qwen2.5-VL-main
+# Make sure to run the script from the correct directory
+cd /path/to/ChatSR
 
-# 检查配置文件是否存在
+# Check whether the configuration file exists
 ls -la qwen-vl-finetune/scripts/zero3.json
 
-# 如果文件不存在，复制现有配置
+# If the file does not exist, copy the existing configuration
 cp qwen-vl-finetune/scripts/zero3.json ./zero3.json
 ```
 
-### 2. 内存不足 (OOM) 问题
+### 2. Out-of-Memory (OOM) Issues
 
-**方案A: 减少批处理大小**
+**Option A: Reduce the batch size**
 ```bash
-# 修改训练脚本中的参数
---per_device_train_batch_size 1    # 从2减到1
---gradient_accumulation_steps 8    # 从4增到8
+# Modify the parameters in the training script
+--per_device_train_batch_size 1    # Reduce from 2 to 1
+--gradient_accumulation_steps 8    # Increase from 4 to 8
 ```
 
-**方案B: 使用内存卸载**
+**Option B: Use memory offloading**
 ```bash
-# 使用zero3_offload.json配置
+# Use the zero3_offload.json configuration
 --deepspeed ./qwen-vl-finetune/scripts/zero3_offload.json
 ```
 
-**方案C: 减少序列长度**
+**Option C: Reduce the sequence length**
 ```bash
-# 修改模型最大长度
---model_max_length 256    # 从512减到256
+# Modify the model maximum length
+--model_max_length 256    # Reduce from 512 to 256
 ```
 
-### 3. NCCL通信错误
+### 3. NCCL Communication Error
 
-**错误信息：**
+**Error message:**
 ```
 NCCL error: unhandled cuda error
 ```
 
-**解决方案：**
+**Solution:**
 ```bash
-# 设置NCCL环境变量
+# Set NCCL environment variables
 export NCCL_DEBUG=INFO
-export NCCL_SOCKET_IFNAME=eth0  # 根据实际网络接口调整
-export NCCL_IB_DISABLE=1        # 禁用InfiniBand
+export NCCL_SOCKET_IFNAME=eth0  # Adjust according to the actual network interface
+export NCCL_IB_DISABLE=1        # Disable InfiniBand
 
-# 或者使用单机多卡模式
+# Or use single-node multi-GPU mode
 export MASTER_ADDR="127.0.0.1"
 export MASTER_PORT=29500
 ```
 
-### 4. 模型加载失败
+### 4. Model Loading Failed
 
-**错误信息：**
+**Error message:**
 ```
 OSError: [Errno 2] No such file or directory
 ```
 
-**解决方案：**
+**Solution:**
 ```bash
-# 检查模型路径
-ls -la /oceanfs/liyanjie/Qwen2.5_vl/Qwen2.5-VL-main/Qwen/Qwen2.5-VL-3B-Instruct/
+# Check the model path
+ls -la /path/to/Qwen2.5-VL-3B-Instruct/
 
-# 如果模型不存在，重新下载
+# If the model does not exist, download it again
 python Model_download_HF.py
 ```
 
-### 5. CUDA版本兼容性问题
+### 5. CUDA Version Compatibility Issues
 
-**检查CUDA版本：**
+**Check the CUDA version:**
 ```bash
 nvcc --version
 nvidia-smi
 python -c "import torch; print(torch.version.cuda)"
 ```
 
-**重新安装PyTorch（如需要）：**
+**Reinstall PyTorch (if needed):**
 ```bash
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
 
-## 🔧 完整的运行步骤
+## 🔧 Complete Run Steps
 
-1. **环境验证**
+1. **Environment validation**
 ```bash
-cd /oceanfs/liyanjie/Qwen2.5_vl_SR_all/Qwen2.5-VL-main
+cd /path/to/ChatSR
 bash scripts/validate_setup.sh
 ```
 
-2. **启动训练**
+2. **Start training**
 ```bash
 bash scripts/train_symbolic_regression.sh
 ```
 
-3. **监控训练**
+3. **Monitor training**
 ```bash
-# 查看GPU使用情况
+# View GPU usage
 watch -n 1 nvidia-smi
 
-# 查看训练日志
+# View training logs
 tail -f checkpoints/symbolic-regression-qwen/training.log
 ```
 
-## 🚀 性能优化建议
+## 🚀 Performance Optimization Suggestions
 
-### 内存优化
-- 使用DeepSpeed ZeRO-3卸载
-- 启用梯度检查点
-- 减少数据加载工作进程
+### Memory Optimization
+- Use DeepSpeed ZeRO-3 offloading
+- Enable gradient checkpointing
+- Reduce data loading worker processes
 
-### 速度优化
-- 使用flash attention 2
-- 启用bf16混合精度
-- 优化数据预处理
+### Speed Optimization
+- Use flash attention 2
+- Enable bf16 mixed precision
+- Optimize data preprocessing
 
-### 稳定性优化
-- 设置合适的学习率
-- 使用warmup策略
-- 定期保存检查点
+### Stability Optimization
+- Set an appropriate learning rate
+- Use a warmup strategy
+- Save checkpoints regularly
 
-## 📊 内存使用参考
+## 📊 Memory Usage Reference
 
-| 配置 | GPU内存需求 | 推荐设置 |
+| Configuration | GPU Memory Requirement | Recommended Settings |
 |------|-------------|----------|
-| 单GPU | 24GB+ | batch_size=1, grad_accum=4 |
-| 2GPU | 16GB+ | batch_size=2, grad_accum=4 |
-| 4GPU | 12GB+ | batch_size=2, grad_accum=4 |
-| 8GPU | 8GB+ | batch_size=1, grad_accum=4 |
+| Single GPU | 24GB+ | batch_size=1, grad_accum=4 |
+| 2 GPUs | 16GB+ | batch_size=2, grad_accum=4 |
+| 4 GPUs | 12GB+ | batch_size=2, grad_accum=4 |
+| 8 GPUs | 8GB+ | batch_size=1, grad_accum=4 |
 
-## 🛠️ 调试命令
+## 🛠️ Debugging Commands
 
 ```bash
-# 检查进程状态
+# Check process status
 ps aux | grep python
 
-# 检查端口占用
+# Check port usage
 netstat -tlnp | grep 29500
 
-# 清理GPU内存
+# Clear GPU memory
 python -c "import torch; torch.cuda.empty_cache()"
 
-# 强制结束训练进程
+# Force-stop the training process
 pkill -f "train_symbolic_regression"
 ```
 
-## 📞 获取帮助
+## 📞 Getting Help
 
-如果问题仍未解决，请提供以下信息：
-1. 完整的错误日志
-2. GPU型号和内存大小
-3. CUDA和PyTorch版本
-4. 使用的训练参数配置 
+If the issue is still unresolved, provide the following information:
+1. Complete error log
+2. GPU model and memory size
+3. CUDA and PyTorch versions
+4. Training parameter configuration in use

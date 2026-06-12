@@ -1,6 +1,6 @@
 """
-修复的智能数据类型管理器
-解决权重类型转换错误问题
+Fixed smart dtype manager
+Resolve weight dtype conversion errors
 """
 
 import torch
@@ -13,10 +13,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 class SmartDtypeManager:
-    """智能数据类型管理器"""
+    """Smart dtype manager"""
     
     def __init__(self, default_dtype=torch.float32, fallback_dtype=torch.float32):
-        # 修复：使用float32作为默认类型，避免bfloat16问题
+        # Fix: use float32 as default type to avoid bfloat16 issues
         self.default_dtype = default_dtype
         self.fallback_dtype = fallback_dtype
         self.force_float32_ops = {
@@ -25,7 +25,7 @@ class SmartDtypeManager:
         
     @contextmanager 
     def force_dtype(self, dtype):
-        """强制使用指定dtype的上下文管理器"""
+        """Context manager that forces the specified dtype"""
         old_dtype = self.default_dtype
         self.default_dtype = dtype
         try:
@@ -34,25 +34,25 @@ class SmartDtypeManager:
             self.default_dtype = old_dtype
     
     def get_safe_dtype(self, tensor: torch.Tensor, operation: str = "default") -> torch.dtype:
-        """获取安全的数据类型"""
-        # 修复：所有操作都使用float32确保稳定性
+        """Get safe dtype"""
+        # Fix: use float32 for all operations to ensure stability
         return torch.float32
     
     def safe_cast(self, tensor: torch.Tensor, operation: str = "default") -> torch.Tensor:
-        """安全地转换tensor类型"""
+        """Safely convert tensor dtype"""
         target_dtype = self.get_safe_dtype(tensor, operation)
         if tensor.dtype != target_dtype:
             return tensor.to(target_dtype)
         return tensor
 
-# 全局管理器实例
+# Global manager instance
 dtype_manager = SmartDtypeManager()
 
 def safe_linear(input_tensor: torch.Tensor, weight: torch.Tensor, bias: Optional[torch.Tensor] = None) -> torch.Tensor:
-    """安全的线性变换，不修改原权重"""
-    # 修复：确保不直接修改权重参数
+    """Safe linear transform without modifying original weights"""
+    # Fix: ensure weight parameters are not modified directly
     if input_tensor.dtype != weight.dtype:
-        # 将输入转换为权重的类型，而不是相反
+        # Convert input to the weight dtype, not the reverse
         input_tensor = input_tensor.to(weight.dtype)
     
     if bias is not None and bias.dtype != weight.dtype:
@@ -60,30 +60,30 @@ def safe_linear(input_tensor: torch.Tensor, weight: torch.Tensor, bias: Optional
     return F.linear(input_tensor, weight, bias)
 
 def safe_softmax(input_tensor: torch.Tensor, dim: int = -1) -> torch.Tensor:
-    """安全的softmax，使用float32保证数值稳定性"""
+    """Safe softmax using float32 for numerical stability"""
     original_dtype = input_tensor.dtype
     
-    # 转换为float32进行计算
+    # Convert to float32 for computation
     if input_tensor.dtype != torch.float32:
         input_tensor = input_tensor.to(torch.float32)
     
     result = F.softmax(input_tensor, dim=dim)
     
-    # 转回原始类型
+    # Convert back to original dtype
     if original_dtype != torch.float32:
         result = result.to(original_dtype)
     
     return result
 
 def safe_layer_norm(input_tensor: torch.Tensor, normalized_shape, weight=None, bias=None, eps=1e-5) -> torch.Tensor:
-    """安全的LayerNorm，使用float32保证数值稳定性"""
+    """Safe LayerNorm using float32 for numerical stability"""
     original_dtype = input_tensor.dtype
     
-    # 转换为float32进行计算
+    # Convert to float32 for computation
     if input_tensor.dtype != torch.float32:
         input_tensor = input_tensor.to(torch.float32)
     
-    # 权重和偏置也转换为float32
+    # Convert weight and bias to float32 as well
     if weight is not None and weight.dtype != torch.float32:
         weight = weight.to(torch.float32)
     if bias is not None and bias.dtype != torch.float32:
@@ -91,41 +91,41 @@ def safe_layer_norm(input_tensor: torch.Tensor, normalized_shape, weight=None, b
     
     result = F.layer_norm(input_tensor, normalized_shape, weight, bias, eps)
     
-    # 转回原始类型
+    # Convert back to original dtype
     if original_dtype != torch.float32:
         result = result.to(original_dtype)
     
     return result
 
 class FixedLinear(nn.Linear):
-    """修复的Linear层，避免权重类型问题"""
+    """Fixed Linear layer avoiding weight dtype issues"""
     
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        # 修复：使用安全的线性变换，不修改权重
+        # Fix: use safe linear transform without modifying weights
         return safe_linear(input, self.weight, self.bias)
 
 class FixedLayerNorm(nn.LayerNorm):
-    """修复的LayerNorm层，避免权重类型问题"""
+    """Fixed LayerNorm layer avoiding weight dtype issues"""
     
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        # 修复：使用安全的layer norm，不修改权重
+        # Fix: use safe layer norm without modifying weights
         return safe_layer_norm(input, self.normalized_shape, self.weight, self.bias, self.eps)
 
 def apply_safe_dtype_to_model(model: nn.Module, target_dtype: torch.dtype = torch.float32):
     """
-    将模型安全地转换为指定dtype，避免权重修改问题
+    Safely convert the model to the specified dtype, avoiding weight modification issues
     
     Args:
-        model: 要转换的模型
-        target_dtype: 目标数据类型，推荐float32
+        model: Model to convert
+        target_dtype: Target dtype; float32 is recommended
     """
-    # 修复：首先转换整个模型
+    # Fix: convert the entire model first
     model = model.to(target_dtype)
     
-    # 替换可能有问题的层
+    # Replace potentially problematic layers
     for name, module in list(model.named_modules()):
         if isinstance(module, nn.Linear) and not isinstance(module, FixedLinear):
-            # 创建FixedLinear替换
+            # Create FixedLinear replacement
             fixed_linear = FixedLinear(
                 module.in_features, 
                 module.out_features, 
@@ -135,7 +135,7 @@ def apply_safe_dtype_to_model(model: nn.Module, target_dtype: torch.dtype = torc
             if module.bias is not None:
                 fixed_linear.bias.data = module.bias.data.to(target_dtype)
             
-            # 替换模块
+            # Replace module
             parent_module = model
             module_names = name.split('.')
             for module_name in module_names[:-1]:
@@ -143,24 +143,24 @@ def apply_safe_dtype_to_model(model: nn.Module, target_dtype: torch.dtype = torc
             setattr(parent_module, module_names[-1], fixed_linear)
             
         elif isinstance(module, nn.LayerNorm) and not isinstance(module, FixedLayerNorm):
-            # 创建FixedLayerNorm替换
+            # Create FixedLayerNorm replacement
             fixed_ln = FixedLayerNorm(module.normalized_shape, eps=module.eps)
             if module.weight is not None:
                 fixed_ln.weight.data = module.weight.data.to(target_dtype)
             if module.bias is not None:
                 fixed_ln.bias.data = module.bias.data.to(target_dtype)
             
-            # 替换模块
+            # Replace module
             parent_module = model
             module_names = name.split('.')
             for module_name in module_names[:-1]:
                 parent_module = getattr(parent_module, module_name)
             setattr(parent_module, module_names[-1], fixed_ln)
     
-    logger.info(f"模型已安全转换为{target_dtype}")
+    logger.info(f"Model safely converted to {target_dtype}")
     return model
 
-# 向后兼容的别名
+# Backward-compatible alias
 SmartLinear = FixedLinear
 SmartLayerNorm = FixedLayerNorm
 smart_linear = safe_linear
@@ -168,10 +168,10 @@ smart_layer_norm = safe_layer_norm
 smart_softmax = safe_softmax
 
 def disable_monkey_patch():
-    """禁用可能有问题的monkey patch"""
-    # 修复：不进行任何monkey patch，使用原生PyTorch函数
-    logger.info("已禁用monkey patch，使用原生PyTorch函数")
+    """Disable potentially problematic monkey patch"""
+    # Fix: do not apply any monkey patch; use native PyTorch functions
+    logger.info("Monkey patch disabled; using native PyTorch functions")
     pass
 
-# 修复：默认禁用monkey patch
+# Fix: disable monkey patch by default
 disable_monkey_patch() 

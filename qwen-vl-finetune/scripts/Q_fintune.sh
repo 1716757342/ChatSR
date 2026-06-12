@@ -11,26 +11,26 @@
 # ======================
 # Path Configuration
 # ======================
-MODEL_PATH="/home/liyanjie/Qwen2.5_vl/Qwen2.5-VL-main/Qwen/Qwen2.5-VL-3B-Instruct"  # [ModelArguments] Pretrained model path
+MODEL_PATH="/path/to/Qwen2.5-VL-3B-Instruct"  # [ModelArguments] Pretrained model path
 OUTPUT_DIR="./checkpoints/Qwen-3b-Ex"                   # Directory for saving checkpoints
 CACHE_DIR="./cache"                          # [TrainingArguments] Cache directory for models
 DATASETS="DEMO1%100"                  # [DataArguments] Dataset with sampling rate
 
 # ======================
-# 分布式训练配置
+# Distributed training configuration
 # ======================
-# 指定使用 GPU 0, 1, 2, 3, 4, 5。这会告诉 CUDA 程序只有这几张卡可见，
-# 并且它们会被 torchrun 重新编号为 0, 1, 2, 3, 4, 5
+# Specify GPUs 0, 1, 2, 3, 4, and 5. This tells CUDA programs that only these cards are visible,
+# and torchrun will renumber them as 0, 1, 2, 3, 4, and 5.
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
-NPROC_PER_NODE=4 # 进程数必须与 CUDA_VISIBLE_DEVICES 中的 GPU 数量一致
+NPROC_PER_NODE=4 # The number of processes must match the number of GPUs in CUDA_VISIBLE_DEVICES
 
-MASTER_ADDR="10.3.2.7"                     # [必需] 多卡训练的主节点 IP
-MASTER_PORT=$(shuf -i 20000-29999 -n 1)     # 随机端口，避免冲突
+MASTER_ADDR="10.3.2.7"                     # [Required] Master node IP for multi-GPU training
+MASTER_PORT=$(shuf -i 20000-29999 -n 1)     # Random port to avoid conflicts
 
 torchrun --nproc_per_node=$NPROC_PER_NODE \
          --master_addr=$MASTER_ADDR \
          --master_port=$MASTER_PORT \
-         /home/liyanjie/Qwen2.5_vl/Qwen2.5-VL-main/qwen-vl-finetune/qwenvl/train/train_qwen.py \
+         /path/to/ChatSR/qwen-vl-finetune/qwenvl/train/train_qwen.py \
          --model_name_or_path $MODEL_PATH \
          --tune_mm_llm True \
          --tune_mm_vision False \

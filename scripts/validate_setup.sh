@@ -1,115 +1,115 @@
 #!/bin/bash
-# 符号回归训练环境验证脚本
+# Symbolic regression training environment validation script
 
-echo "🔍 验证符号回归训练环境配置..."
+echo "🔍 Validating symbolic regression training environment configuration..."
 echo "=" * 50
 
-# 检查CUDA设备
-echo "📱 检查CUDA设备..."
+# Check CUDA devices
+echo "📱 Checking CUDA devices..."
 if command -v nvidia-smi &> /dev/null; then
     nvidia-smi --list-gpus
-    echo "✅ CUDA设备检查完成"
+    echo "✅ CUDA device check completed"
 else
-    echo "❌ nvidia-smi未找到，请检查CUDA安装"
+    echo "❌ nvidia-smi not found; please check the CUDA installation"
     exit 1
 fi
 
-# 检查Python环境
-echo "🐍 检查Python环境..."
+# Check Python environment
+echo "🐍 Checking Python environment..."
 python --version
-echo "PyTorch版本: $(python -c 'import torch; print(torch.__version__)')"
-echo "CUDA可用: $(python -c 'import torch; print(torch.cuda.is_available())')"
-echo "GPU数量: $(python -c 'import torch; print(torch.cuda.device_count())')"
+echo "PyTorch version: $(python -c 'import torch; print(torch.__version__)')"
+echo "CUDA available: $(python -c 'import torch; print(torch.cuda.is_available())')"
+echo "Number of GPUs: $(python -c 'import torch; print(torch.cuda.device_count())')"
 
-# 检查DeepSpeed
-echo "🚀 检查DeepSpeed..."
+# Check DeepSpeed
+echo "🚀 Checking DeepSpeed..."
 if python -c "import deepspeed" 2>/dev/null; then
-    echo "✅ DeepSpeed已安装: $(python -c 'import deepspeed; print(deepspeed.__version__)')"
+    echo "✅ DeepSpeed installed: $(python -c 'import deepspeed; print(deepspeed.__version__)')"
 else
-    echo "❌ DeepSpeed未安装，请运行: pip install deepspeed"
+    echo "❌ DeepSpeed is not installed; please run: pip install deepspeed"
     exit 1
 fi
 
-# 检查必要文件
-echo "📁 检查必要文件..."
+# Check required files
+echo "📁 Checking required files..."
 
-# 检查模型路径
-MODEL_PATH="/oceanfs/liyanjie/Qwen2.5_vl/Qwen2.5-VL-main/Qwen/Qwen2.5-VL-3B-Instruct"
+# Check model path
+MODEL_PATH="/path/to/Qwen2.5-VL-3B-Instruct"
 if [ -d "$MODEL_PATH" ]; then
-    echo "✅ 模型路径存在: $MODEL_PATH"
+    echo "✅ Model path exists: $MODEL_PATH"
 else
-    echo "❌ 模型路径不存在: $MODEL_PATH"
+    echo "❌ Model path does not exist: $MODEL_PATH"
     exit 1
 fi
 
-# 检查DeepSpeed配置文件
+# Check DeepSpeed configuration file
 DEEPSPEED_CONFIG="./qwen-vl-finetune/scripts/zero3.json"
 if [ -f "$DEEPSPEED_CONFIG" ]; then
-    echo "✅ DeepSpeed配置文件存在: $DEEPSPEED_CONFIG"
-    # 验证JSON格式
+    echo "✅ DeepSpeed configuration file exists: $DEEPSPEED_CONFIG"
+    # Validate JSON format
     if python -c "import json; json.load(open('$DEEPSPEED_CONFIG'))" 2>/dev/null; then
-        echo "✅ DeepSpeed配置JSON格式正确"
+        echo "✅ DeepSpeed configuration JSON format is correct"
     else
-        echo "❌ DeepSpeed配置JSON格式错误"
+        echo "❌ DeepSpeed configuration JSON format is invalid"
         exit 1
     fi
 else
-    echo "❌ DeepSpeed配置文件不存在: $DEEPSPEED_CONFIG"
+    echo "❌ DeepSpeed configuration file does not exist: $DEEPSPEED_CONFIG"
     exit 1
 fi
 
-# 检查训练脚本
+# Check training script
 TRAIN_SCRIPT="./qwen-vl-finetune/qwenvl/train/train_symbolic_regression.py"
 if [ -f "$TRAIN_SCRIPT" ]; then
-    echo "✅ 训练脚本存在: $TRAIN_SCRIPT"
+    echo "✅ Training script exists: $TRAIN_SCRIPT"
 else
-    echo "❌ 训练脚本不存在: $TRAIN_SCRIPT"
+    echo "❌ Training script does not exist: $TRAIN_SCRIPT"
     exit 1
 fi
 
-# 检查内存使用
-echo "💾 检查GPU内存..."
+# Check memory usage
+echo "💾 Checking GPU memory..."
 python << EOF
 import torch
 if torch.cuda.is_available():
     for i in range(torch.cuda.device_count()):
         props = torch.cuda.get_device_properties(i)
         total_memory = props.total_memory / 1024**3
-        print(f"GPU {i}: {props.name}, 总内存: {total_memory:.1f} GB")
-        
-        # 检查当前内存使用
+        print(f"GPU {i}: {props.name}, total memory: {total_memory:.1f} GB")
+
+        # Check current memory usage
         torch.cuda.set_device(i)
         allocated = torch.cuda.memory_allocated() / 1024**3
         reserved = torch.cuda.memory_reserved() / 1024**3
-        print(f"  已分配: {allocated:.2f} GB, 已预留: {reserved:.2f} GB")
+        print(f"  allocated: {allocated:.2f} GB, reserved: {reserved:.2f} GB")
 else:
-    print("❌ CUDA不可用")
+    print("❌ CUDA is unavailable")
 EOF
 
-# 测试torchrun
-echo "🚀 测试torchrun..."
+# Test torchrun
+echo "🚀 Testing torchrun..."
 if command -v torchrun &> /dev/null; then
-    echo "✅ torchrun可用"
-    # 简单测试
+    echo "✅ torchrun is available"
+    # Simple test
     torchrun --help > /dev/null 2>&1
     if [ $? -eq 0 ]; then
-        echo "✅ torchrun工作正常"
+        echo "✅ torchrun is working normally"
     else
-        echo "❌ torchrun测试失败"
+        echo "❌ torchrun test failed"
         exit 1
     fi
 else
-    echo "❌ torchrun未找到"
+    echo "❌ torchrun not found"
     exit 1
 fi
 
-# 环境变量检查
-echo "🌍 检查环境变量..."
-echo "CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-未设置}"
-echo "OMP_NUM_THREADS: ${OMP_NUM_THREADS:-未设置}"
+# Environment variable checks
+echo "🌍 Checking environment variables..."
+echo "CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-not set}"
+echo "OMP_NUM_THREADS: ${OMP_NUM_THREADS:-not set}"
 
 echo "=" * 50
-echo "🎉 所有检查通过！环境配置正确。"
-echo "现在可以运行训练脚本:"
+echo "🎉 All checks passed! The environment configuration is correct."
+echo "You can now run the training script:"
 echo "bash scripts/train_symbolic_regression.sh"
-echo "=" * 50 
+echo "=" * 50
