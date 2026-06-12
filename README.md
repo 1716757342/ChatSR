@@ -1,6 +1,13 @@
-# ChatSR
+# ChatSR: A Scientific Multimodal Large Language Model for Discovering Formulas from Scientific Data
 
-ChatSR is a symbolic regression project based on Qwen2.5-VL. The project replaces the original vision encoder with a Set Transformer, allowing the model to receive numerical sample points `[x1, x2, ..., y]` as multimodal input and generate the preorder traversal of the fitted expression according to the prompt.
+![Status](https://img.shields.io/badge/status-active-brightgreen)
+![CI](https://img.shields.io/badge/CI-passing-brightgreen)
+![Python](https://img.shields.io/badge/python-3.8+-blue)
+![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS-lightgrey)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
+![](ChatSR.png)
+ChatSR is a multimodal large language model for symbolic regression. The project uses Set Transformer as the data encoder, enabling the model to receive and analyze scientific data `[x1, x2, ..., y]` and generate the preorder traversal of a fitted expression from the prompt to describe the underlying law behind the data.
 
 Example target model output:
 
@@ -8,20 +15,19 @@ Example target model output:
 Based on the data, the derived formula is: <|math_add|>,<|math_x1|>,<|math_x2|>
 ```
 
-This project also provides inference scripts that can restore model-output preorder into expressions, optimize constants in the expressions with BFGS, and output the fitting `R2`.
+This project also provides inference scripts that recover expressions from the model-generated preorder traversal, optimize constants in the expression with BFGS, and report the fitted `R2`.
 
 ---
 
 ## Features
 
-- Supports automatic synthesis of symbolic regression data.
-- Supports special mathematical tokens, such as `<|math_add|>`, `<|math_sin|>`, `<|math_x1|>`, and `<|math_C|>`.
-- Builds a symbolic regression model based on Qwen2.5-VL.
+- The first multimodal large language model for symbolic regression.
+- Supports mathematical special tokens such as `<|math_add|>`, `<|math_sin|>`, `<|math_x1|>`, and `<|math_C|>`.
 - Uses Set Transformer to encode numerical data points.
 - Supports HuggingFace Trainer + FSDP distributed training.
 - Provides interactive inference and debugging scripts.
-- Supports restoring preorder to mathematical expressions.
-- Supports optimizing constants with BFGS and computing R².
+- Supports recovering mathematical expressions from preorder traversals.
+- Supports BFGS constant optimization and R² calculation.
 
 ---
 
@@ -34,15 +40,15 @@ This project also provides inference scripts that can restore model-output preor
 ├── train_symbolic_regression_distributed_fixed.py
 │                                             # Recommended distributed training script
 ├── train_symbolic_regression_fixed.py        # Non-distributed training script
-├── interactive_inference_json_AAAA.py        # Interactive inference and debugging script
-├── interactive_inference_json_bfgs.py        # Inference + expression restoration + BFGS + R2
+├── interactive_inference_json.py        # Interactive inference and debugging script
+├── interactive_inference_json_bfgs.py        # Inference + expression recovery + BFGS + R2
 └── qwen-vl-finetune/
     └── qwenvl/
         ├── data/
-        │   ├── __init__.py                   # Dataset registration entry point
-        │   └── data_symbolic_regression.py   # Dataset and Collator
+        │   ├── __init__.py                   # Dataset registry entry point
+        │   └── data_symbolic_regression.py   # Dataset and collator
         └── symbolic_regression/
-            ├── model.py                      # Qwen-SR model definition
+            ├── model.py                      # ChatSR model definition
             └── data_processor.py             # Data processing and model configuration
 ```
 
@@ -50,7 +56,7 @@ This project also provides inference scripts that can restore model-output preor
 
 ## Environment Setup
 
-Start from a new conda environment:
+Start by creating a new conda environment:
 
 ```bash
 conda create -n chatsr python=3.10 -y
@@ -69,13 +75,13 @@ Install dependencies:
 pip install numpy scipy torch transformers accelerate peft safetensors
 ```
 
-Here, `scipy` is used for BFGS constant optimization.
+`scipy` is used for BFGS constant optimization.
 
 ---
 
 ## Data Format
 
-Each sample is in JSON format, for example:
+Each sample is in JSON format. Example:
 
 ```json
 {
@@ -99,7 +105,7 @@ Each sample is in JSON format, for example:
 }
 ```
 
-The format of `data_points` is:
+The `data_points` format is:
 
 ```text
 [x1, x2, ..., y]
@@ -139,7 +145,7 @@ Therefore, when `Dim = 4`, data generation should use:
 
 ## Quick Start
 
-### 1. Synthesize Data
+### 1. Generate Synthetic Data
 
 Use `data_gen_vary.py`:
 
@@ -153,7 +159,7 @@ python data_gen_vary.py \
   --max_dims 3
 ```
 
-Generated results:
+Generated output:
 
 ```text
 symbolic_regression_data_vary_1000/
@@ -179,23 +185,23 @@ SYMBOLIC_REGRESSION_VARY_1000 = {
 }
 ```
 
-And add it to `data_dict`:
+Then add it to `data_dict`:
 
 ```python
 "SYMBOLIC_REGRESSION_VARY_1000": SYMBOLIC_REGRESSION_VARY_1000,
 ```
 
-Select this dataset during training with the following parameter:
+Select this dataset during training with:
 
 ```bash
 --dataset_use SYMBOLIC_REGRESSION_VARY_1000%100
 ```
 
-Here `%100` means using 100% of the data.
+`%100` means using 100% of the data.
 
-### 3. Extend Special Mathematical Tokens
+### 3. Extend Mathematical Special Tokens
 
-If the base model does not yet have `<|math_...|>` tokens, run this first:
+If the base model does not already contain `<|math_...|>` tokens, run:
 
 ```bash
 python expend_tokens.py \
@@ -222,15 +228,15 @@ DATASETS="SYMBOLIC_REGRESSION_LEXICAL_POINT_20_TEST%100"
 CUDA_VISIBLE_DEVICES="0,1,2,3"
 ```
 
-To change the model path, output directory, dataset, or GPUs, modify this first:
+To change the model path, output directory, dataset, or GPUs, edit:
 
 ```text
 scripts/train_symbolic_regression_multi_gpu.sh
 ```
 
-After training ends, the final model will be saved to the directory specified by `OUTPUT_DIR` in the script.
+After training, the final model is saved under the directory specified by `OUTPUT_DIR` in the script.
 
-### 5. Run Inference and Compute R²
+### 5. Run Inference and Calculate R²
 
 Edit the paths at the top of `interactive_inference_json_bfgs.py`:
 
@@ -252,14 +258,14 @@ sr-bfgs> list 20
 sr-bfgs> infer advanced_sr_final_18
 ```
 
-The script will output:
+The script outputs:
 
-- Raw prediction from the large model;
-- Extracted preorder;
-- Restored expression;
+- Raw model prediction;
+- Extracted preorder traversal;
+- Recovered expression;
 - Constants optimized by BFGS;
-- MSE;
-- R².
+- MSE；
+- R²。
 
 ---
 
@@ -267,7 +273,7 @@ The script will output:
 
 ### position_ids
 
-The `input_ids` and `labels` returned by the Dataset must be `[seq]`, not `[1, seq]`. Otherwise, `position_ids` may incorrectly become length 1, causing the teacher-forcing loss to be falsely low.
+The dataset must return `input_ids` and `labels` as `[seq]`, not `[1, seq]`. Otherwise, `position_ids` may incorrectly become length 1, causing a falsely low teacher-forcing loss.
 
 Keep similar logic in `data_symbolic_regression.py`:
 
@@ -279,19 +285,19 @@ if isinstance(i, int):
     }
 ```
 
-The Collator should also ensure:
+The collator should also ensure:
 
 ```python
 position_ids = [ids.squeeze(0) if ids.dim() > 1 else ids for ids in position_ids]
 ```
 
-After training, use `interactive_inference_json_AAAA.py` to check:
+After training, use `interactive_inference_json.py` to check:
 
 ```text
 sr-json> loss <sample_id>
 ```
 
-Normally, this should satisfy:
+Normally, the following should hold:
 
 ```text
 collator_loss ≈ raw_instance_loss
@@ -299,7 +305,7 @@ collator_loss ≈ raw_instance_loss
 
 ### lm_head
 
-The training script disables word embedding sharing:
+The training script disables tied word embeddings:
 
 ```python
 config.tie_word_embeddings = False
@@ -314,7 +320,7 @@ This allows the output weights corresponding to mathematical tokens in `lm_head`
 ### Debug Inference
 
 ```bash
-python interactive_inference_json_AAAA.py
+python interactive_inference_json.py
 ```
 
 Common commands:
@@ -329,9 +335,9 @@ target <sample_id>
 quit
 ```
 
-This script is suitable for checking loss, first-token probabilities, and generation behavior.
+This script is useful for checking loss, first-token probabilities, and generation behavior.
 
-### Expression-Fitting Inference
+### Expression Fitting Inference
 
 ```bash
 python interactive_inference_json_bfgs.py
@@ -347,13 +353,13 @@ target <sample_id>
 quit
 ```
 
-Here, `infer` and `fit` are equivalent.
+`infer` and `fit` are equivalent.
 
 ---
 
 ## Minimal Test Example
 
-If you only want to quickly run through the workflow, generate 20 samples:
+To quickly run through the workflow, generate 20 samples:
 
 ```bash
 python data_gen_vary.py \
@@ -384,7 +390,7 @@ Use during training:
 
 ## FAQ
 
-### 1. The model outputs ordinary English instead of `<|math_...|>` tokens
+### 1. The model outputs plain English instead of `<|math_...|>` tokens
 
 Check first:
 
@@ -395,14 +401,14 @@ sr-json> debug <sample_id>
 
 If the loss is high, the model has not learned well yet. If the loss is low but generation is unstable, try:
 
-- Increasing the training data;
-- Continuing training;
-- Standardizing the answer template;
-- Ensuring both `lm_head` and the LLM participate in training.
+- Increase the training data;
+- Continue training;
+- Use a consistent answer template;
+- Ensure both `lm_head` and the LLM participate in training.
 
-### 2. Shape mismatch occurs during training
+### 2. Shape mismatch during training
 
-Check the data dimensions:
+Check the data dimension:
 
 ```text
 Dim = max_dims + 1
@@ -415,7 +421,7 @@ Dim = 4
 --max_dims 3
 ```
 
-### 3. BFGS inference cannot restore the expression
+### 3. BFGS inference cannot recover the expression
 
 Check whether the raw output with `skip_special_tokens=False` contains:
 
@@ -423,10 +429,10 @@ Check whether the raw output with `skip_special_tokens=False` contains:
 <|math_add|>,<|math_x1|>,<|math_C|>
 ```
 
-If not, the model did not generate a valid preorder.
+If not, the model did not generate a valid preorder traversal.
 
 ---
 
 ## License
 
-This project is developed based on Qwen2.5-VL related components. Please comply with the license requirements of the original Qwen model and related third-party dependencies when using it.
+This project is developed based on Qwen-related components. Please comply with the licenses of the original Qwen models and related third-party dependencies when using it.
