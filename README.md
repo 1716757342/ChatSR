@@ -21,9 +21,8 @@ Based on the data, the derived formula is: <|math_add|>,<|math_x1|>,<|math_x2|>
 
 ## 功能特点
 
-- 支持自动合成符号回归数据。
+- 第一个符号回归领域的多模态大语言模型。
 - 支持数学特殊 token，例如 `<|math_add|>`、`<|math_sin|>`、`<|math_x1|>`、`<|math_C|>`。
-- 基于 Qwen2.5-VL 构建符号回归模型。
 - 使用 Set Transformer 编码数值数据点。
 - 支持 HuggingFace Trainer + FSDP 分布式训练。
 - 提供交互式推理和调试脚本。
@@ -49,7 +48,7 @@ Based on the data, the derived formula is: <|math_add|>,<|math_x1|>,<|math_x2|>
         │   ├── __init__.py                   # 数据集注册入口
         │   └── data_symbolic_regression.py   # Dataset 和 Collator
         └── symbolic_regression/
-            ├── model.py                      # Qwen-SR 模型定义
+            ├── model.py                      # ChatSR 模型定义
             └── data_processor.py             # 数据处理和模型配置
 ```
 
