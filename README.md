@@ -40,7 +40,7 @@ Based on the data, the derived formula is: <|math_add|>,<|math_x1|>,<|math_x2|>
 ├── train_symbolic_regression_distributed_fixed.py
 │                                             # 推荐使用的分布式训练脚本
 ├── train_symbolic_regression_fixed.py        # 非分布式训练脚本
-├── interactive_inference_json_AAAA.py        # 交互式推理和调试脚本
+├── interactive_inference_json.py        # 交互式推理和调试脚本
 ├── interactive_inference_json_bfgs.py        # 推理 + 表达式恢复 + BFGS + R2
 └── qwen-vl-finetune/
     └── qwenvl/
@@ -435,4 +435,4 @@ Dim = 4
 
 ## License
 
-本项目基于 Qwen2.5-VL 相关组件开发。使用时请遵守原始 Qwen 模型及相关第三方依赖的许可证要求。
+本项目基于 Qwen 相关组件开发。使用时请遵守原始 Qwen 模型及相关第三方依赖的许可证要求。
